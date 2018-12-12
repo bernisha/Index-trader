@@ -24,9 +24,12 @@ import os
 #from pydatastream import Datastream
 #from business_calendar import Calendar, MO, TU, WE, TH, FR
 import pyodbc
-from write_excel import excel_fx as exl_rep
+#from write_excel import excel_fx as exl_rep
 #from write_excel import input_fx as inp
 from write_excel import select_fund as sf
+
+
+start_time = datetime.now() 
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -324,67 +327,153 @@ new_dat_preflow=fx_dta(dfprt_x=dfprt_preflow)
 new_dat_pf=new_dat_preflow[0]
 n_comb_pf=new_dat_preflow[1]
 
+time_elapsed = datetime.now() - start_time 
+
+print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
+
 # Post flow
 new_dat_x=fx_dta(dfprt_x=dfprt)
 new_dat=new_dat_x[0]
 n_comb=new_dat_x[1]
         
+
+ #fut_price=((new_dat[new_dat.index.get_level_values('AssetType2')=='Index Future']['Close_price']).reset_index())[['Port_code','AssetType3','Close_price']]        
+no_fut=((new_dat[new_dat.index.get_level_values('AssetType5')=='A. INDEX FUTURES'][['Quantity']]).reset_index())[['Port_code','AssetType5','Quantity']]        
+fut_code1=(cash_lmt_x[['P_Code', 'Future_Code']]).copy()
+fut_code1.loc[:,'Future_Code']= np.where(fut_code1['Future_Code']=='NoFuture', 'NoFuture', fut_code1['Future_Code']+str((cash_flows_eff['fut_sufx'].values)[0]))
+no_fut = no_fut.merge(fut_code1, how='right',left_on=['Port_code'],right_on=['P_Code'] )
+no_fut['AssetType5'] = np.where(no_fut.AssetType5.isnull(), no_fut.Future_Code.values, no_fut.AssetType5.values)
+no_fut=(no_fut[['P_Code','AssetType5','Quantity']]).merge((((new_dat[new_dat.index.get_level_values('AssetType5')=='A. INDEX FUTURES'][['Close_price']]).reset_index())[['Port_code','AssetType5','Close_price']]).drop_duplicates(['Port_code','AssetType5']) ,
+                       how='left',left_on=['P_Code','AssetType5'],right_on=['Port_code','AssetType5'])
+no_fut=no_fut.fillna(0)
+no_fut=no_fut[['Port_code', 'AssetType5',  'Quantity',  'Close_price']]
+#no_fut.columns= ['Port_code', 'AssetType5',  'Quantity',  'Close_price']
+
+n_comb=(n_comb.reset_index()).merge(no_fut, how='left',left_on=['Port_code'],right_on=['Port_code'])
+
+# Get Inflow information & override effective cash if applicable 
+
+cash_lmt=pd.merge(cash_lmt_x, cash_flows_eff[['Port_code','Eff_cash','Inflow']], how='left',left_on=['P_Code'],right_on=['Port_code']) 
+cash_lmt.pop('Port_code')
+cash_lmt=cash_lmt.rename(columns = {'Eff_cash':'Ovd_Effcash'})
+cash_lmt['Tgt_EffCash1']=np.where(cash_lmt[['Ovd_Effcash']].isnull(), cash_lmt[['Tgt_EffCash']].values, cash_lmt[['Ovd_Effcash']])
+
+
+# Get Futures codes
+
+get_Futurecodes=fut_code1
+cash_lmt=cash_lmt.merge(get_Futurecodes, how='left',left_on=['P_Code'],right_on=['P_Code'])
+#cash_lmt=cash_lmt.drop(['Port_code'], axis=1)
+
+
+n_comb=pd.merge(n_comb, cash_lmt, how='left',left_on=['Port_code'],right_on=['P_Code'])
+n_comb.loc[:,'FundValue_p']=1
     
+"' Create Breach Flag '"
+#   Inflow 	
+#  Var1	    test1	                 Var2	      test2		                Action
+#	Eff cash	up (breach upper bound)	Total cash	   up (breach upper bound)	  Trade equity + futures
+#	Eff cash	up (breach upper bound)	Total cash	   within bounds		         Trade futures only
+#	Eff cash	up (breach upper bound)	Total cash	   down (breach lower bound)  Trade equity + futures
+						
+#	Eff cash	within bounds	          Total cash	   up (breach upper bound)		Trade equity
+#	Eff cash	within bounds	          Total cash	   within bounds		          No action
+#	Eff cash	within bounds	          Total cash	   down (breach lower bound)	Trade equity
+						
+#Outflow						
+#  Var1	    test1	                     Var2	       test2		                      Action
+#	Eff cash	down (breach lower bound)	Total cash 	down (breach lower bound)		Trade equity + futures
+#	Eff cash	down (breach lower bound)	Total cash	   within bounds		              Trade futures only
+#	Eff cash	down (breach lower bound)	Total cash	   down (breach upper bound)		Trade equity + futures
+						
+#	Eff cash	within bounds	             Total cash	   down (breach lower bound)		Trade equity
+#	Eff cash	within bounds	             Total cash	   within bounds		              No action
+#	Eff cash	within bounds              Total cash	   down (breach upper bound)		Trade equity
+						
+#Else						Override
+n_comb.columns =['Port_code', 'Totalcash_R', 'FuturesExposure_R', 'Effectivecash_R',
+                   'EquityExposure_R', 'FundValue_R', 'Totalcash_p',
+                   'FuturesExposure_p', 'Effectivecash_p', 'EquityExposure_p',
+                   'AssetType5', 'Quantity', 'Close_price', 'P_Code', 'Future_Code_x',
+                   'Min_EffCash', 'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash',
+                   'Tgt_EffCash', 'Tgt_TotalCash', 'Ovd_Effcash', 'Inflow', 'Tgt_EffCash1',
+                   'Future_Code_y', 'FundValue_p']   
+             
+
+def CashFlowFlag(Eff_cash,Total_cash, mx_totcash, mn_totcash, mx_effcash, mn_effcash):
     
-    #fut_price=((new_dat[new_dat.index.get_level_values('AssetType2')=='Index Future']['Close_price']).reset_index())[['Port_code','AssetType3','Close_price']]        
-    no_fut=((new_dat[new_dat.index.get_level_values('AssetType2')=='Index Future'][['Quantity']]).reset_index())[['Port_code','AssetType3','Quantity']]        
-    fut_code1=(cash_lmt_x[['P_Code', 'Future_Code']]).copy()
-    fut_code1.loc[:,'Future_Code']= np.where(fut_code1['Future_Code']=='NoFuture', 'NoFuture', fut_code1['Future_Code']+str((cash_flows_eff['fut_sufx'].values)[0]))
-    no_fut = no_fut.merge(fut_code1, how='right',left_on=['Port_code'],right_on=['P_Code'] )
-    no_fut['AssetType3'] = np.where(no_fut.AssetType3.isnull(), no_fut.Future_Code.values, no_fut.AssetType3.values)
-    no_fut=(no_fut[['P_Code','AssetType3','Quantity']]).merge((((new_dat[new_dat.index.get_level_values('AssetType2')=='Index Future'][['Close_price']]).reset_index())[['AssetType3','Close_price']]).drop_duplicates(['AssetType3']) ,
-                           how='left',left_on=['AssetType3'],right_on=['AssetType3'])
-    no_fut=no_fut.fillna(0)
-    no_fut.columns= ['Port_code', 'AssetType3',  'Quantity',  'Close_price']
+    if Eff_cash > mx_effcash:
+        if Total_cash > mx_totcash:
+            return 'Trade Equity + Futures'
+        elif Total_cash < mn_totcash:
+            return 'Trade Equity + Futures' # unlikely to occur
+        else: 
+            return 'Trade Futures only'
+    elif Eff_cash < mn_effcash:
+        if Total_cash < mn_totcash:
+            return 'Trade Equity + Futures'
+        elif Total_cash > mx_totcash:
+            return 'Trade Equity + Futures' # unlikely to occur
+        else:
+            return 'Trade Futures only'
+    else:
+        if Total_cash < mn_totcash:
+           return 'Trade Equity'
+        elif Total_cash > mx_totcash:
+           return 'Trade Equity'
+        else:
+           return 'No Action'
+
+n_comb['CashFlowFlag']=n_comb.apply(lambda r: (CashFlowFlag(r.Effectivecash_p,r.Totalcash_p, r.Max_TotalCash, r.Min_TotalCash, r.Max_EffCash, r.Min_EffCash)),axis=1)
+       
+        
+def trade_calc(Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash, mn_effcash, ovrd_effcash, aeff_cash, atot_cash, fnd_val, fut_price, fut_exp):
+    if Flag == 'Trade Equity + Futures':
+        tgt_totcash = tgt_totcash
+        tgt_effcash = tgt_effcash
+    elif Flag == 'Trade Futures only':
+         x_trd = np.where(fut_code=="NoFuture", "No Trade",
+                                    np.where((aeff_cash>mx_effcash), 'Buy', 
+                                             np.where((aeff_cash<mn_effcash), 'Sell', 'No Trade')))
+         
+         x_trd2 = np.where((x_trd=="No Trade")&(~np.isnan(ovrd_effcash))&(not(fut_code=="NoFuture")),
+                                    np.where((aeff_cash>tgt_effcash), 'Buy', 
+                                             np.where((aeff_cash<tgt_effcash), 'Sell', 'No Trade')),x_trd)
+         no_fut = np.where(np.isin(x_trd2, ['Buy','Sell']), np.rint(((aeff_cash-tgt_effcash)*fnd_val)/(fut_price*10)), 0)
+         fut_exp1=((no_fut*10*fut_price)/fnd_val)+fut_exp
+         if (atot_cash - fut_exp1) < 0:
+              tgt_totcash = np.where(np.isnan(fut_exp), 0, fut_exp) + tgt_effcash
+              tgt_effcash = tgt_effcash
+         else:
+             tgt_effcash = np.where((atot_cash - fut_exp1) < 0, (atot_cash - fut_exp), (atot_cash - fut_exp1))
+             tgt_totcash = atot_cash
     
-    n_comb=(n_comb.reset_index()).merge(no_fut, how='left',left_on=['Port_code'],right_on=['Port_code'])
+    elif Flag == 'Trade Equity':
+        
+         tgt_totcash = np.where(np.isnan(fut_exp), 0, fut_exp) + tgt_effcash
+         tgt_effcash = tgt_effcash
+     
+    else:
+        tgt_totcash = atot_cash
+        tgt_effcash = aeff_cash
+         
+    return [np.round(tgt_effcash,16),np.round(tgt_totcash,16)]
+        
+n_comb['fin_teff_cash']=n_comb.apply(lambda r: (trade_calc(r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                           r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p)[0]),axis=1)
+n_comb['fin_tot_cash']=n_comb.apply(lambda r: (trade_calc(r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                           r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p)[1]),axis=1)
+n_comb['InvType'] = np.where(n_comb.Inflow.values > 0, 'Investment', np.where(n_comb.Inflow.values < 0, 'Withdrawal Pay(t)', 'No cash flow'))        
+        
+
+
+
+
+
     
-    # Get Inflow information & override effective cash if applicable 
-    
-    cash_lmt=pd.merge(cash_lmt_x, cash_flows_eff[['Port_code','Eff_cash','Inflow']], how='left',left_on=['P_Code'],right_on=['Port_code']) 
-    cash_lmt.pop('Port_code')
-    cash_lmt=cash_lmt.rename(columns = {'Eff_cash':'Ovd_Effcash'})
-    cash_lmt['Tgt_EffCash1']=np.where(cash_lmt[['Ovd_Effcash']].isnull(), cash_lmt[['Tgt_EffCash']].values, cash_lmt[['Ovd_Effcash']])
-    
-    
-    # Get Futures codes
-    
-    get_Futurecodes=fut_code1
-    cash_lmt=cash_lmt.merge(get_Futurecodes, how='left',left_on=['P_Code'],right_on=['P_Code'])
-    #cash_lmt=cash_lmt.drop(['Port_code'], axis=1)
-    
-    
-    n_comb=pd.merge(n_comb, cash_lmt, how='left',left_on=['Port_code'],right_on=['P_Code'])
-    n_comb.loc[:,'FundValue_p']=1
-    
-    # Create Breach Flag
-    # Emx_Tmx - Both Eff cash and Total cash above max
-    # Emx_Tmn - Eff cash above max and Total cash below mn
-    # Emx_Twb - Eff cash above max, Total cash within bounds
-    # Emn_Tmx - Eff cash below min, Total cash above max
-    # Emn_Tmn - Eff cash below min, Total cash below min
-    # Emn_Twb - Eff cash below min, Total cash within bounds
-    # Ewb_Twb - No breach
-    
-    n_comb.loc[:,'Flag']= np.where((n_comb['Effectivecash_p'].values>=n_comb['Max_EffCash'].values),
-                              np.where((n_comb['Totalcash_p'].values>=n_comb['Max_TotalCash'].values), 
-                                       'Emx_Tmx',
-                                np.where((n_comb['Totalcash_p'].values<=n_comb['Min_TotalCash'].values),
-                                         'Emx_Tmn',
-                                          'Emx_Twb')),
-                                   np.where((n_comb['Effectivecash_p'].values<=n_comb['Min_EffCash'].values),
-                                       np.where((n_comb['Totalcash_p'].values>=n_comb['Max_TotalCash'].values),
-                                                'Emn_Tmx',
-                                   np.where((n_comb['Totalcash_p'].values<=n_comb['Min_TotalCash'].values),
-                                            'Emn_Tmn',
-                                            'Emn_Twb')), 'Ewb_Twb'
-                                      ))
-                                             
+   
+ 
+                                      
     
     # Scenario 1 Futures trade
     n_comb.loc[:,'Trade']= np.where(n_comb.Future_Code_y=="NoFuture", "No Trade",

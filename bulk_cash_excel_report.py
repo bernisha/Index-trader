@@ -18,6 +18,8 @@ import openpyxl.cell
 from openpyxl import load_workbook
 
 
+start_time = datetime.now() 
+
 output_folder= 'c:/data/'
 
 
@@ -34,6 +36,9 @@ writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
 new = new_dat_pf.reset_index()
 new= new[~new.AssetType5.isin(['SSF DIV'])]
 
+new_flow = n_comb
+inv=(new_flow[['Port_code','fin_teff_cash','fin_tot_cash', 'InvType']]).set_index('Port_code').T.to_dict('list')
+    
 #new.pivot(index=['Port_code','AssetType1'], columns= 'AssetType3', values='EffExposure')
 
 #h=pd.pivot_table(new,  index=['Port_code'],columns=['AssetType1','AssetType3'], values=['EffExposure','EffWgt'],aggfunc=np.sum)
@@ -41,6 +46,7 @@ new= new[~new.AssetType5.isin(['SSF DIV'])]
 
 qf=pd.DataFrame([], dtype='object')
 futures_dict = dict()
+cashflow_dict = dict()
 fnd_excp = ['DSALPC']
 
 for fnd in lst_fund:
@@ -62,14 +68,22 @@ for fnd in lst_fund:
     g.columns = ['Port_code', 'AssetType1', 'AssetType5', 'EffExposure', 'EffWgt']
     g=g.set_index(['Port_code','AssetType1','AssetType5'])
     
-    
+    # Create futures dictionary
     p=(new_prt[new_prt.AssetType5.isin(['A. INDEX FUTURES'])][['Port_code','AssetType3']]).drop_duplicates('Port_code').set_index('Port_code').T.to_dict('list')
     
     if fnd in fnd_excp:
         p[fnd] = ['No Future']
     
+    # Cash flow dicitionary
+    c=(((new_dat[(new_dat.index.get_level_values('AssetType5').isin(['Cash flow']))&(new_dat.index.get_level_values('Port_code').isin([fnd]))]['MarketValue']).reset_index())[['Port_code','MarketValue']]).set_index('Port_code').T.to_dict('list')
+    
+    # Inv Type dictionary
+    
+    
     futures_dict.update(p)
-  
+    cashflow_dict.update(c)
+    
+    
 #h.query('Port_code==["OMSI01"]')
 #h.stack()
 #h= h.T
@@ -162,10 +176,20 @@ cell_format6_4 = workbook.add_format({'bold': False, 'bg_color':'#CCFFFF', 'font
 
 cell_format7 = workbook.add_format({'bold': True, 'bg_color':'#CCFFCC', 'font':11, 'locked':False,'align': 'center','border': 1})
 cell_format8 = workbook.add_format({'bold': True, 'font':11, 'font_color': '#339966', 'locked':False,'align': 'center','border': 1})
-                                      
+
+td_cell_format_1 = workbook.add_format({'bold': True, 'bg_color':'#FFC7CE', 'font':10, 'locked':False,'font_color': '#9C0006'  })
+td_cell_format_2 = workbook.add_format({'bold': True, 'bg_color':'#C6EFCE', 'font':10, 'locked':False,'font_color': '#006100'  })
+
+td_cell_format_3 = workbook.add_format({'bold': True, 'bg_color':'#FF0000', 'font':10, 'locked':False,'font_color': '#9C0006','align': 'center'  })
+td_cell_format_4 = workbook.add_format({'bold': True, 'bg_color':'#CCCCFF', 'font':11, 'locked':False,'font_color': '#0000FF','align': 'center'  })
+td_cell_format_4.set_font_size(11)
                                       
 format1 = workbook.add_format({'num_format': 'R#,##0'})
-format2 = workbook.add_format({'num_format': '0.000%'})                                    
+format2 = workbook.add_format({'num_format': '0.000%'})     
+
+
+format1_b = workbook.add_format({'bold': True,'num_format': 'R#,##0'})
+format2_b = workbook.add_format({'bold': True,'num_format': '0.000%'})                                    
 
 worksheet.write_string('A1', 'Batch Fund Cash Calc',cell_format1)
   
@@ -193,8 +217,27 @@ worksheet.write_string('B17', 'Benchmark',cell_format1 )
 
 
 
-import string  
-alp=list(string.ascii_uppercase) 
+#import string  
+#alp=list(string.ascii_uppercase) 
+alp=[]
+def colnum_string(n):
+    string = ""
+    while n > 0:
+        n, remainder = divmod(n - 1, 26)
+        string = chr(65 + remainder) + string
+    return string
+    #print(string)
+#print (colnum_string(1))
+
+
+for a in range(1,(len(lst_fund))*2+5):
+#    print(a)
+    x_alp=colnum_string(a)
+#    print(x_alp)
+    alp.append(x_alp)
+#    print(alp)
+    
+
 
 st_col=2
 fmts=[cell_format5,cell_format6]
@@ -228,18 +271,23 @@ for j in lst_fund:
     worksheet.write_formula(get_pl3,str('='+get_pl2+'/('+str(alp[st_col]+str(st_row+1))+'+'+get_pl2+')'),fmts[jet])
     worksheet.merge_range(str(alp[st_col]+str(st_row-3)+":"+alp[st_col+1]+str(st_row-3)), futures_dict[j][0] ,cell_format7)
     worksheet.merge_range(str(alp[st_col]+str(st_row-2)+":"+alp[st_col+1]+str(st_row-2)), dic_om_index[j][1] ,cell_format8)
+    worksheet.write_number(str(alp[st_col]+str(st_row-8)), cashflow_dict[j][0] ,format1)
+    worksheet.write_number(str(alp[st_col]+str(st_row-5)), inv[j][0] ,fmts3_2[jet])
+    worksheet.write_number(str(alp[st_col]+str(st_row-4)), inv[j][1] ,fmts3_2[jet])
     
-    
+    worksheet.write_string(get_pl4, inv[j][2] ,cell_format1)
     worksheet.data_validation(get_pl4, {'validate': 'list',
                                         'source': ['Investment', 
                                                    'Hedged Withdrawal', 
                                                    'Hedged With Pay(t)',
-                                                   'Withdrawal Pay(t)'],
+                                                   'Withdrawal Pay(t)',
+                                                   'No cash flow'],
                                         'input_title': 'Enter a cash flow',
                                         'input_message': 'Type & Value'} )
     
-    worksheet.write_formula(get_pl5, str('='+str(alp[st_col+1]+str(st_row+26))),fmts3_2[jet])
-    worksheet.write_formula(get_pl6, str('='+str(alp[st_col+1]+str(st_row+17))),fmts3_2[jet])
+     
+   # worksheet.write_formula(get_pl5, str('='+str(alp[st_col+1]+str(st_row+26))),fmts3_2[jet])
+   # worksheet.write_formula(get_pl6, str('='+str(alp[st_col+1]+str(st_row+17))),fmts3_2[jet])
     
     worksheet.write_formula(get_pl7, str('='+str(alp[st_col+1]+str(st_row+56))),fmts3_2[jet])
     worksheet.write_formula(get_pl8, str('='+str(alp[st_col+1]+str(st_row+47))),fmts3_2[jet])
@@ -247,14 +295,27 @@ for j in lst_fund:
     worksheet.conditional_format(get_pl2, {'type': 'cell','criteria': '<','value': 0,'format': fmts2_1[jet]})                              
     worksheet.conditional_format(get_pl2, {'type': 'cell','criteria': '>=','value': 0,'format': fmts2_2[jet]})   
     worksheet.conditional_format(get_pl3, {'type': 'cell','criteria': '<','value': 0,'format': fmts3_1[jet]})                              
-    worksheet.conditional_format(get_pl3, {'type': 'cell','criteria': '>=','value': 0,'format': fmts3_2[jet]})                              
+    worksheet.conditional_format(get_pl3, {'type': 'cell','criteria': '>=','value': 0,'format': fmts3_2[jet]})      
+    
+    worksheet.conditional_format(get_pl4,{'type': 'cell','criteria': 'equal to','value': '"No cash flow"','format': cell_format1})
+    worksheet.conditional_format(get_pl4,{'type': 'cell','criteria': '!=','value': '"No cash flow"','format': td_cell_format_4})
+    worksheet.conditional_format(get_pl5,{'type': 'cell','criteria': '!=','value': inv[j][0] ,'format': td_cell_format_4})
+    worksheet.conditional_format(get_pl6,{'type': 'cell','criteria': '!=','value': inv[j][1] ,'format': td_cell_format_4})
+    
+    for g in range(st_row, st_row+ 25):
+        if g in [st_row+1, st_row+2,st_row+7, st_row+11,st_row+13]:
+            
+            worksheet.conditional_format(str(alp[st_col]+str(g)),{'type': 'cell','criteria': '!=','value': inv[j][1] ,'format': format1_b})
+            worksheet.conditional_format(str(alp[st_col+1]+str(g)),{'type': 'cell','criteria': '!=','value': inv[j][1] ,'format': format2_b})
+    
+    #worksheet.conditional_format(get_pl4,{'type': 'cell','criteria': 'equal to','value': '"No cash flow"','format': cell_format1})
     
     st_col=st_col+2
     jet=np.where(jet==0,1,0)
    # print(get_pl)
 
 # grouping categories
-
+del g
 
 worksheet.set_row((st_row+2), None, None, {'level': 1})
 worksheet.set_row((st_row+3), None, None, {'level': 1})
@@ -372,8 +433,6 @@ del gg
 
 td_st = (st_row+2*len(qf)+2)
 td_col=2
-td_cell_format_1 = workbook.add_format({'bold': True, 'bg_color':'#FFC7CE', 'font':10, 'locked':False,'font_color': '#9C0006'  })
-td_cell_format_2 = workbook.add_format({'bold': True, 'bg_color':'#C6EFCE', 'font':10, 'locked':False,'font_color': '#006100'  })
 
 
 for f in lst_fund:
@@ -391,9 +450,9 @@ for f in lst_fund:
                             str('=IF(ISERROR('+str(alp[td_col]+str(td_st+9))+'*'+str(alp[td_col+1]+str(td_st-21))+'*10),0,'+\
                                                    str(alp[td_col]+str(td_st+9))+'*'+str(alp[td_col+1]+str(td_st-21))+'*10)'), informat1_n)
     worksheet.write_formula(str(alp[td_col]+str(td_st+9)),\
-                            str('=IF('+str(alp[td_col]+str(td_st-33))+'="No Future",0,INT((('+str(alp[td_col]+str(td_st-34))+'-'+str(alp[td_col]+str(td_st-35))+\
+                            str('=IF('+str(alp[td_col]+str(td_st-33))+'="No Future",0,ROUNDDOWN((('+str(alp[td_col]+str(td_st-34))+'-'+str(alp[td_col]+str(td_st-35))+\
                                 '-'+str(alp[td_col+1]+str(td_st-8))+')*'+str(alp[td_col]+str(td_st-14))+')/'+ \
-                                    str(alp[td_col+1]+str(td_st-21))+'/10))'),cell_format2_1)
+                                    str(alp[td_col+1]+str(td_st-21))+'/10,0))'),cell_format2_1)
     worksheet.write_formula(str(alp[td_col+1]+str(td_st+9)),str('=IF('+str(alp[td_col]+str(td_st+9))+'<0,"SOC",IF('+str(alp[td_col]+str(td_st+9))\
                                                             +'>0,"BOC",""))'),informat1_n) 
     
@@ -402,8 +461,8 @@ for f in lst_fund:
                                 +str(alp[td_col]+str(td_st-4))),informat1_n)
     worksheet.write_formula(str(alp[td_col]+str(td_st+13)),str('='+str(alp[td_col]+str(td_st+14))),informat1_n)
     worksheet.write_formula(str(alp[td_col]+str(td_st+14)),str('=-'+str(alp[td_col]+str(td_st+4))),informat1_n)
-    worksheet.write_formula(str(alp[td_col+1]+str(td_st+14)),str('=IF('+str(alp[td_col]+str(td_st+14))+'<0,"SELL EQTY",IF('+str(alp[td_col]+str(td_st+14))\
-                                                            +'>0,"BUY EQTY",""))'),informat1_n) 
+    worksheet.write_formula(str(alp[td_col+1]+str(td_st+14)),str('=IF('+str(alp[td_col]+str(td_st+14))+'<-0.01,"SELL EQTY",IF('+str(alp[td_col]+str(td_st+14))\
+                                                            +'>0.01,"BUY EQTY",""))'),informat1_n) 
     
     for g in range(td_st+1, td_st+qf.shape[0]+1):
       #  print(g)
@@ -422,8 +481,8 @@ for f in lst_fund:
         worksheet.conditional_format(str(alp[td_col+1]+str(td_st+9)),{'type': 'cell','criteria': '=','value': '"BOC"','format': td_cell_format_2}) 
         worksheet.conditional_format(str(alp[td_col+1]+str(td_st+14)),{'type': 'cell','criteria': '=','value': '"SELL EQTY"','format': td_cell_format_1}) 
         worksheet.conditional_format(str(alp[td_col+1]+str(td_st+14)),{'type': 'cell','criteria': '=','value': '"BUY EQTY"','format': td_cell_format_2}) 
-        worksheet.conditional_format(str(alp[td_col]+str(td_st+14)),{'type': 'cell','criteria': '<','value': 0,'format': td_cell_format_1})
-        worksheet.conditional_format(str(alp[td_col]+str(td_st+14)),{'type': 'cell','criteria': '>','value': 0,'format': td_cell_format_2}) 
+        worksheet.conditional_format(str(alp[td_col]+str(td_st+14)),{'type': 'cell','criteria': '<','value': -0.01,'format': td_cell_format_1})
+        worksheet.conditional_format(str(alp[td_col]+str(td_st+14)),{'type': 'cell','criteria': '>','value': 0.01,'format': td_cell_format_2}) 
     
     td_col=td_col+2
                              
@@ -478,10 +537,15 @@ del f
 del g
 del gg
 
-worksheet.write_comment('C10', 'Enter cash flow info below', {'start_col': 5,'start_row': 7, 'x_scale': 1.2, 'y_scale': 0.25, 'visible': True ,'font_size': 10, 'bold':True ,'color': 'green'})
+worksheet.freeze_panes(19,2)
+worksheet.write_comment('C10', 'Enter cash flow info below', {'start_col': 5,'start_row': 7, 'x_scale': 1.2, 'y_scale': 0.25, 'visible': True ,'font_size': 11, 'bold':True ,'color': '#FFCC99'})
 
 writer.save()
 workbook.close()
+
+time_elapsed = datetime.now() - start_time 
+print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
+
 
 "' ################################################################################################################# '"
 wb = load_workbook(output_file)
