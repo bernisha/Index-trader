@@ -1,4 +1,4 @@
 # Index-trader
 Index trading toolbox
 
-Testing Github
+Add changes for automatic rules trading and cash flow information
