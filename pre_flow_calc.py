@@ -27,7 +27,10 @@ import pyodbc
 #from write_excel import excel_fx as exl_rep
 #from write_excel import input_fx as inp
 from write_excel import select_fund as sf
-
+from write_excel import CashFlowFlag as cff
+from write_excel import trade_calc as t_c
+from write_excel import bulk_cash_excel_report as bcer
+from write_excel import cash_flow_validity_fx as cfvf
 
 start_time = datetime.now() 
 
@@ -55,7 +58,7 @@ Set parameters for trading
 #else:
 
     #startDate = datetime.today().date()
-startDate = datetime.today().date()
+startDate = datetime.today()
 #startDate = datetime.strptime('Sep 15 2017', '%b %d %Y').date()
 pd.options.display.max_rows = 200
 #testing=True
@@ -73,7 +76,7 @@ dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Val
 #dirtooutput_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Futures Trades'
 dirtooutput_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
 #output_folder='\\'.join([dirtooutput_file ,folder_yr, folder_mth])
-output_folder=str('\\'.join([dirtooutput_file ,folder_yr, folder_mth,folder_day])+'\\Futures Trades')
+output_folder=str('\\'.join([dirtooutput_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
 
 
 if not os.path.exists(output_folder):
@@ -82,31 +85,41 @@ if not os.path.exists(output_folder):
 
 # Map fund and benchmark settings 
 
-dic_om_index = {'DRIEQC':['OM Responsible Equity Fund','CSIESG'],
-'DSWIXC':['SWIX Index Fund','JSESWIXALSICAPPED'],
-'CORPEQ':['OMLAC Shareholder Protected Equity Portfolio','JSESWIXALSI'],
-'MFEQTY':['M&F Protected Equity Portfolio','JSESWIXALSI'],
-'DSALPC':['SA Listed Property Index Fund','JSESAPY'],
-'USWIMF':['Momentum SWIX Index Fund','JSESWIXALSI'],
-'OMRTMF':['RAFI40 Unit Trust','JSERAFI40'],
-'LEUUSW':['Life Equity UPF','JSESWIXALSICAPPED'],
-'LEIUSW':['Life Equity IPF','JSESWIXALSICAPPED'],
-'SASEMF':['SASRIA','JSESWIXALSI'],
-'BIDLMF':['Bidvest Life CAPI','JSECAPIALSI'],
-'BIIDMF':['Bidvest Insurance CAPI','JSECAPIALSI'],
-'ALSCPF':['Assupol CPF','JSESWIXALSI'],
-'ALSIPF':['Assupol IPF','JSESWIXALSI'],
-'ALSUPF':['Assupol UPF','JSESWIXALSI'],
-'UMSMMF':['Samancor Group Provident Fund','JSESWIXALSI'],
-'OMSI01':['OM CAPPED SWIX FUND','JSESWIXALSICAPPED'],
-'UMSWMF':['Momentum SWIX 40 Index Fund','JSESWIX40'],
- #   'UMC1MF':['Anglo Corp CW','JSESWIXALSI'],
-'OMALMF':['Top40 Unit Trust','JSETOP40'],
-'DALSIC':['All Share Index Fund','JSEALSI'],
-}
+  # Pull in fund dictionary
+fnd_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\fund_dictionary.csv')
+dic_om_index=fnd_dict.set_index(['FundCode']).T.to_dict('list')
+    
+    
+user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+dic_users=user_dict.set_index(['username']).T.to_dict('list')
+    
+fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB']
 
-#dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho']}
-dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
+#dic_om_index = {'DRIEQC':['OM Responsible Equity Fund','CSIESG'],
+#'DSWIXC':['SWIX Index Fund','JSESWIXALSICAPPED'],
+#'CORPEQ':['OMLAC Shareholder Protected Equity Portfolio','JSESWIXALSI'],
+#'MFEQTY':['M&F Protected Equity Portfolio','JSESWIXALSI'],
+#'DSALPC':['SA Listed Property Index Fund','JSESAPY'],
+#'USWIMF':['Momentum SWIX Index Fund','JSESWIXALSI'],
+#'OMRTMF':['RAFI40 Unit Trust','JSERAFI40'],
+#'LEUUSW':['Life Equity UPF','JSESWIXALSICAPPED'],
+#'LEIUSW':['Life Equity IPF','JSESWIXALSICAPPED'],
+#'SASEMF':['SASRIA','JSESWIXALSI'],
+#'BIDLMF':['Bidvest Life CAPI','JSECAPIALSI'],
+#'BIIDMF':['Bidvest Insurance CAPI','JSECAPIALSI'],
+#'ALSCPF':['Assupol CPF','JSESWIXALSI'],
+#'ALSIPF':['Assupol IPF','JSESWIXALSI'],
+#'ALSUPF':['Assupol UPF','JSESWIXALSI'],
+#'UMSMMF':['Samancor Group Provident Fund','JSESWIXALSI'],
+#'OMSI01':['OM CAPPED SWIX FUND','JSESWIXALSICAPPED'],
+#'UMSWMF':['Momentum SWIX 40 Index Fund','JSESWIX40'],
+# #   'UMC1MF':['Anglo Corp CW','JSESWIXALSI'],
+#'OMALMF':['Top40 Unit Trust','JSETOP40'],
+#'DALSIC':['All Share Index Fund','JSEALSI'],
+#}
+#
+##dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho']}
+#dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
 
 #dic_om_index={
 #            'DSALPC':['SA Listed Property Index Fund','JSESAPY',1,5,8,0.0005,0.0022,1,'Option 1 Gross Rate in cents per share'],
@@ -142,6 +155,11 @@ cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv')
 cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
 
 
+ # Import futures
+fut_flow=pd.merge(cash_lmt_x[['P_Code','Future_Code']], cash_flows_eff[['Port_code','fut_sufx']], how='right', left_on=['P_Code'], right_on=['Port_code'] )
+fut_flow['Sec_code']= fut_flow[['Future_Code', 'fut_sufx']].apply(lambda x: ''.join(x), axis=1)
+fut_flow['Sec_code']=np.where(fut_flow.Future_Code=='NoFuture','NoFuture',fut_flow.Sec_code.values)
+    
 # Map Sec type to more descriptive asset classes
 
 def assetClass(Sec_type, ins_code,sec_nam):
@@ -223,7 +241,6 @@ fund_xls[fund_obj.columns] = fund_obj.apply(lambda x: x.str.strip())
 
 df=fund_xls.copy()
 df=df[(df.Port_code.isin(dic_om_index.keys()))]
-df=df[df.Port_code.isin(lst_fund)]
       
 df.loc[:,'Benchmark_code']=df.Port_code.map(lambda x:dic_om_index[x][1])
       
@@ -239,16 +256,42 @@ df['EffExposure']= df[['Market_price']]
 df['Close_price']=np.where((df['AssetType2'].isin(['Index Future']))&(df['Quantity'].values!=0),
                                                       (df['Market_price'].values/df['Quantity'].values)/10, 
                                                        df['Close_price'].values)
+# Futures insert
+if ~fut_flow.empty:
+    fut_flow = pd.merge(fut_flow[['Port_code','Sec_code']], (df[['Trade_date','AssetType1','AssetType5','AssetType3','Sec_code','Close_price']]).drop_duplicates(['Sec_code']), on=['Sec_code'], how='left').fillna(0)
+    fut_flow['Quantity']=0
+    fut_flow['MarketValue']=0
+    fut_flow['EffExposure']=0
+    fut_flow['Trade_date']=startDate
+    fut_flow=(fut_flow[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Close_price','Quantity','MarketValue','EffExposure']]).copy()
+    fut_flow=fut_flow[~(fut_flow.Sec_code=='NoFuture')]
+   
+df=df[df.Port_code.isin(lst_fund)]
                            
 dfprt=(df[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Close_price','Quantity','MarketValue','EffExposure']]).copy()
+
+# Remove cash and other non-equity asset classes for multi-asset class
+dfprt['MarketValue']=np.where((dfprt.Port_code.map(lambda x:dic_om_index[x][2])=='M')&(dfprt.AssetType1!='Equity Exposure'), 0, dfprt.MarketValue.values)
+dfprt['EffExposure']=np.where((dfprt.Port_code.map(lambda x:dic_om_index[x][2])=='M')&(dfprt.AssetType1!='Equity Exposure'), 0, dfprt.EffExposure.values)
+dfprt= dfprt[~((dfprt.AssetType1=='Other')&(dfprt.Port_code.map(lambda x:dic_om_index[x][2])=='M'))]
 
 #Remove SSF Dividend Exposure
 dfprt.loc[:,'EffExposure']=np.where(dfprt[['AssetType5']].isin(override),0, dfprt[['EffExposure']])
 dfprt=dfprt[~(dfprt.Port_code.isnull())]
 dfprt=dfprt[~(dfprt.Quantity.isnull())]
 dfprt_preflow=dfprt.copy()
+
+# Add futures structureback               
+    
+dfprt_preflow=dfprt_preflow.append(fut_flow,sort=True)  
+  
+
             
 if ~cash_flows_eff.empty:
+    xx=cfvf(cash_flows_eff, newest,startDate, lst_fund,bf=0.005)
+    cash_flows_eff=cash_flows_eff.merge((xx[1])[['Port_code','Inflow_use']], on=['Port_code'], how='left')
+    cash_flows_eff=cash_flows_eff[['Port_code', 'Inflow_use', 'Eff_cash', 'fut_sufx']]
+    cash_flows_eff.columns=['Port_code', 'Inflow', 'Eff_cash', 'fut_sufx']
     cash_flows_eff['Trade_date']=startDate
     cash_flows_eff['AssetType1']='A. Total cash'
     cash_flows_eff['AssetType2']='Settled cash'
@@ -260,10 +303,11 @@ if ~cash_flows_eff.empty:
     cash_flows_eff['Quantity']= cash_flows_eff[['Inflow']]
     cash_flows_eff['MarketValue']= cash_flows_eff[['Inflow']]
     cash_flows_eff['EffExposure']= cash_flows_eff[['Inflow']]
+    
     cash_flows=cash_flows_eff[['Trade_date', 'Port_code','AssetType1', 'AssetType5', 'AssetType3', 'Sec_code','Close_price', 'Quantity','MarketValue','EffExposure']]
     
 
-dfprt=dfprt.append(cash_flows)  
+dfprt=dfprt_preflow.append(cash_flows, sort=True)  
 
 
 '''Generate cash calc
@@ -297,7 +341,7 @@ def fx_dta(dfprt_x=dfprt):
     cash_dat=res_ind(effective_cash,'Effective cash').reset_index()
     cash_dat['Trade_date']=startDate
     cash_dat=(cash_dat[['Trade_date', 'Port_code','AssetType1','AssetType5','AssetType3', 'Quantity','EffExposure','MarketValue','FundValue','Close_price']])
-    new_dat=((pd.concat([dfprt_1.reset_index(),cash_dat],axis=0).reset_index().drop('index',axis=1)).sort_values(['Port_code','AssetType1','AssetType5','AssetType3'])).set_index(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3'])
+    new_dat=((pd.concat([dfprt_1.reset_index(),cash_dat],axis=0, sort=True).reset_index().drop('index',axis=1)).sort_values(['Port_code','AssetType1','AssetType5','AssetType3'])).set_index(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3'])
     new_dat['EffWgt']=new_dat[['EffExposure']].values/new_dat[['FundValue']].values
     new_dat['MktWgt']=new_dat[['MarketValue']].values/new_dat[['FundValue']].values
     n_1 = new_dat.reset_index()
@@ -336,7 +380,7 @@ new_dat_x=fx_dta(dfprt_x=dfprt)
 new_dat=new_dat_x[0]
 n_comb=new_dat_x[1]
         
-
+# Determing the number of futures
  #fut_price=((new_dat[new_dat.index.get_level_values('AssetType2')=='Index Future']['Close_price']).reset_index())[['Port_code','AssetType3','Close_price']]        
 no_fut=((new_dat[new_dat.index.get_level_values('AssetType5')=='A. INDEX FUTURES'][['Quantity']]).reset_index())[['Port_code','AssetType5','Quantity']]        
 fut_code1=(cash_lmt_x[['P_Code', 'Future_Code']]).copy()
@@ -368,6 +412,9 @@ cash_lmt=cash_lmt.merge(get_Futurecodes, how='left',left_on=['P_Code'],right_on=
 
 n_comb=pd.merge(n_comb, cash_lmt, how='left',left_on=['Port_code'],right_on=['P_Code'])
 n_comb.loc[:,'FundValue_p']=1
+n_comb.loc[:,'Inflow_p']= np.where(n_comb.Inflow.isnull().values,0 ,  n_comb.Inflow.values/n_comb.FundValue_R.values ) 
+n_comb.loc[:,'Mid_Totalcash_p'] = n_comb[['Max_TotalCash', 'Min_TotalCash']].mean(axis=1) # placeholder
+
     
 "' Create Breach Flag '"
 #   Inflow 	
@@ -397,76 +444,24 @@ n_comb.columns =['Port_code', 'Totalcash_R', 'FuturesExposure_R', 'Effectivecash
                    'AssetType5', 'Quantity', 'Close_price', 'P_Code', 'Future_Code_x',
                    'Min_EffCash', 'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash',
                    'Tgt_EffCash', 'Tgt_TotalCash', 'Ovd_Effcash', 'Inflow', 'Tgt_EffCash1',
-                   'Future_Code_y', 'FundValue_p']   
+                   'Future_Code_y', 'FundValue_p','Inflow_p','Mid_Totalcash_p']   
              
+n_comb=n_comb.merge((xx[1])[['Port_code','ActFlow']], how='left', on=['Port_code'])
+n_comb['ActFlow_p']=n_comb.ActFlow/n_comb.FundValue_R
 
-def CashFlowFlag(Eff_cash,Total_cash, mx_totcash, mn_totcash, mx_effcash, mn_effcash):
-    
-    if Eff_cash > mx_effcash:
-        if Total_cash > mx_totcash:
-            return 'Trade Equity + Futures'
-        elif Total_cash < mn_totcash:
-            return 'Trade Equity + Futures' # unlikely to occur
-        else: 
-            return 'Trade Futures only'
-    elif Eff_cash < mn_effcash:
-        if Total_cash < mn_totcash:
-            return 'Trade Equity + Futures'
-        elif Total_cash > mx_totcash:
-            return 'Trade Equity + Futures' # unlikely to occur
-        else:
-            return 'Trade Futures only'
-    else:
-        if Total_cash < mn_totcash:
-           return 'Trade Equity'
-        elif Total_cash > mx_totcash:
-           return 'Trade Equity'
-        else:
-           return 'No Action'
-
-n_comb['CashFlowFlag']=n_comb.apply(lambda r: (CashFlowFlag(r.Effectivecash_p,r.Totalcash_p, r.Max_TotalCash, r.Min_TotalCash, r.Max_EffCash, r.Min_EffCash)),axis=1)
+n_comb['CashFlowFlag']=n_comb.apply(lambda r: (cff(r.Effectivecash_p,r.Totalcash_p, r.Max_TotalCash, r.Min_TotalCash, r.Max_EffCash, r.Min_EffCash, r.Mid_Totalcash_p, r.ActFlow_p,r.FuturesExposure_p)),axis=1)
        
+ 
         
-def trade_calc(Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash, mn_effcash, ovrd_effcash, aeff_cash, atot_cash, fnd_val, fut_price, fut_exp):
-    if Flag == 'Trade Equity + Futures':
-        tgt_totcash = tgt_totcash
-        tgt_effcash = tgt_effcash
-    elif Flag == 'Trade Futures only':
-         x_trd = np.where(fut_code=="NoFuture", "No Trade",
-                                    np.where((aeff_cash>mx_effcash), 'Buy', 
-                                             np.where((aeff_cash<mn_effcash), 'Sell', 'No Trade')))
-         
-         x_trd2 = np.where((x_trd=="No Trade")&(~np.isnan(ovrd_effcash))&(not(fut_code=="NoFuture")),
-                                    np.where((aeff_cash>tgt_effcash), 'Buy', 
-                                             np.where((aeff_cash<tgt_effcash), 'Sell', 'No Trade')),x_trd)
-         no_fut = np.where(np.isin(x_trd2, ['Buy','Sell']), np.rint(((aeff_cash-tgt_effcash)*fnd_val)/(fut_price*10)), 0)
-         fut_exp1=((no_fut*10*fut_price)/fnd_val)+fut_exp
-         if (atot_cash - fut_exp1) < 0:
-              tgt_totcash = np.where(np.isnan(fut_exp), 0, fut_exp) + tgt_effcash
-              tgt_effcash = tgt_effcash
-         else:
-             tgt_effcash = np.where((atot_cash - fut_exp1) < 0, (atot_cash - fut_exp), (atot_cash - fut_exp1))
-             tgt_totcash = atot_cash
-    
-    elif Flag == 'Trade Equity':
-        
-         tgt_totcash = np.where(np.isnan(fut_exp), 0, fut_exp) + tgt_effcash
-         tgt_effcash = tgt_effcash
-     
-    else:
-        tgt_totcash = atot_cash
-        tgt_effcash = aeff_cash
-         
-    return [np.round(tgt_effcash,16),np.round(tgt_totcash,16)]
-        
-n_comb['fin_teff_cash']=n_comb.apply(lambda r: (trade_calc(r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
-                                                           r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p)[0]),axis=1)
-n_comb['fin_tot_cash']=n_comb.apply(lambda r: (trade_calc(r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
-                                                           r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p)[1]),axis=1)
+n_comb['fin_teff_cash']=n_comb.apply(lambda r: (t_c(r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                           r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p,r.ActFlow_p)[0]),axis=1)
+n_comb['fin_tot_cash']=n_comb.apply(lambda r: (t_c(r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                           r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p)[1]),axis=1)
 n_comb['InvType'] = np.where(n_comb.Inflow.values > 0, 'Investment', np.where(n_comb.Inflow.values < 0, 'Withdrawal Pay(t)', 'No cash flow'))        
         
 
-
+bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp)
+print("\nReport Complete")
 
 
 
@@ -475,116 +470,5 @@ n_comb['InvType'] = np.where(n_comb.Inflow.values > 0, 'Investment', np.where(n_
  
                                       
     
-    # Scenario 1 Futures trade
-    n_comb.loc[:,'Trade']= np.where(n_comb.Future_Code_y=="NoFuture", "No Trade",
-                                    np.where((n_comb['Effectivecash_p'].values>=n_comb['Max_EffCash'].values), 'Buy', 
-                                             np.where((n_comb['Effectivecash_p'].values<=n_comb['Min_EffCash'].values), 'Sell', 'No Trade')))
-    n_comb.loc[:,'Trade']=np.where((n_comb.Trade=="No Trade")&(~n_comb.Ovd_Effcash.isnull())&(~(n_comb.Future_Code_y=="NoFuture")),
-                                    np.where((n_comb['Effectivecash_p'].values>=n_comb['Tgt_EffCash1'].values), 'Buy', 
-                                             np.where((n_comb['Effectivecash_p'].values<=n_comb['Tgt_EffCash1'].values), 'Sell', 'No Trade')),n_comb.Trade)
-    n_comb.loc[:,'No. Futures']=np.where(n_comb[['Trade']].isin(['Buy','Sell']), np.rint(((n_comb[['Effectivecash_p']].values-n_comb[['Tgt_EffCash1']].values)*n_comb[['FundValue_R']].values)/(n_comb[['Close_price']].values*10)), 0)
-    n_comb.loc[:,'FuturesExposure_TT']=(n_comb[['No. Futures']].values)*10*n_comb[['Close_price']].values
-    n_comb.loc[:,'FuturesExposure_TTp']=n_comb[['FuturesExposure_TT']].values/n_comb[['FundValue_R']].values
- 
-    # Equity Trade
-    
-    n_comb.loc[:,'TradeEq']= np.where(n_comb.Future_Code_y=="NoFuture", "No Trade",
-                                    np.where((n_comb['Effectivecash_p'].values>=n_comb['Max_EffCash'].values), 'Buy', 
-                                             np.where((n_comb['Effectivecash_p'].values<=n_comb['Min_EffCash'].values), 'Sell', 'No Trade')))
-    
-    
-    
-    
-    # Check for negative effective cash
-    n_comb.loc[:,'Trade'] = np.where(((-(n_comb[['No. Futures']].values*n_comb[['Close_price']].fillna(0).values*10)/n_comb[['FundValue_R']].values)+n_comb[['Effectivecash_p']].values)<0, 0, n_comb[['Trade']])
-    n_comb.loc[:,'No. Futures']=np.where(((-(n_comb[['No. Futures']].values*n_comb[['Close_price']].fillna(0).values*10)/n_comb[['FundValue_R']].values)+n_comb[['Effectivecash_p']].values)<0, 0, n_comb[['No. Futures']])
-    
-    n_comb.loc[:,'Trade']=np.where(n_comb['No. Futures']==0, 'No Trade', n_comb.Trade.values)
-    
-    
-    n_comb.loc[:,'Effectivecash_T']= (-(n_comb[['No. Futures']].values*n_comb[['Close_price']].fillna(0).values*10)/n_comb[['FundValue_R']].values)+n_comb[['Effectivecash_p']].values
-    
-    
-    n_comb.loc[:,'Effectivecash_TR']= n_comb[['Effectivecash_T']].values*n_comb[['FundValue_R']].values
-    
-    n_comb.loc[:,'EquityExposure_T']=n_comb[['EquityExposure_p']].values
-    n_comb.loc[:,'EquityExposure_TR']=n_comb[['EquityExposure_R']].values
-    
-    n_comb.loc[:,'FundValue_T']=1
-    n_comb.loc[:,'FundValue_TR']=n_comb[['FundValue_R']].values
-    
-    
-    n_comb.loc[:,'FuturesExposure_T']=n_comb[['FuturesExposure_p']].fillna(0).values+((n_comb[['No. Futures']].values*n_comb[['Close_price']].fillna(0).values*10)/n_comb[['FundValue_R']].values)
-    n_comb.loc[:,'FuturesExposure_TR']=n_comb[['FuturesExposure_R']].fillna(0).values+((n_comb[['No. Futures']].values*n_comb[['Close_price']].fillna(0).values*10))
-    
-    n_comb.loc[:,'Totalcash_T']=n_comb[['Totalcash_p']].values
-    n_comb.loc[:,'Totalcash_TR']=n_comb[['Totalcash_R']].values
-    n_comb.loc[:,'Check cash']=np.where((n_comb['Totalcash_T'].values>=n_comb['Max_TotalCash'].values), 'Reduce cash', 
-                                             np.where((n_comb['Totalcash_T'].values<=n_comb['Min_TotalCash'].values), 'Increase cash', ''))
-    n_comb.loc[:,'Inflow_p'] = n_comb['Inflow']/n_comb['FundValue_R'].values
-    
-    
-    # Add Pre-Flow
-    
-    n_comb_pf.columns = [str(col) + '_pf' for col in n_comb_pf.columns]
-    n_comb=pd.merge(n_comb, n_comb_pf.reset_index(), how='left',left_on=['Port_code'],right_on=['Port_code'])
-    n_comb.loc[:,'FundValue_p_pf']=1
-   
-    
-    n_comb_eff_n=n_comb[['Port_code','FundValue_R_pf','EquityExposure_R_pf','Totalcash_R_pf','FuturesExposure_R_pf','Effectivecash_R_pf',
-                       'FundValue_R','EquityExposure_R','Totalcash_R','FuturesExposure_R','Effectivecash_R','Tgt_EffCash1', 'No. Futures',
-                       'AssetType3','Trade','FundValue_TR','EquityExposure_TR','Totalcash_TR','FuturesExposure_TR','Effectivecash_TR','Check cash','Min_EffCash',
-                       'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash','Tgt_EffCash','Inflow']]
-    
-    n_comb_eff=n_comb_eff_n.copy()
-    n_comb_eff.loc[:,'ExposureType']=''
-    n_comb_eff.loc[:,'Tgt_EffCash1']=np.nan
-    n_comb_eff.loc[:,'No. Futures']=n_comb[['Close_price']].values
-    n_comb_eff.loc[:,'Trade']=np.nan
-    n_comb_eff.loc[:,'Check cash']=np.nan
-    n_comb_eff.loc[:,'Min_EffCash']=np.nan
-    n_comb_eff.loc[:,'Max_EffCash']=np.nan
-    n_comb_eff.loc[:,'Min_TotalCash']=np.nan
-    n_comb_eff.loc[:,'Max_TotalCash']=np.nan
-    n_comb_eff.loc[:,'Tgt_EffCash']=np.nan
-    n_comb_eff.loc[:,'AssetType3']=np.nan
-    
-    n_comb_eff_n=n_comb[['Port_code','FundValue_p_pf','EquityExposure_p_pf','Totalcash_p_pf','FuturesExposure_p_pf','Effectivecash_p_pf',
-                       'FundValue_p','EquityExposure_p','Totalcash_p','FuturesExposure_p','Effectivecash_p','Tgt_EffCash1', 'No. Futures',
-                       'AssetType3','Trade','FundValue_T','EquityExposure_T','Totalcash_T','FuturesExposure_T','Effectivecash_T','Check cash','Min_EffCash',
-                       'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash','Tgt_EffCash','Inflow_p']]
-    n_comb_effp=n_comb_eff_n.copy()
-    n_comb_effp.loc[:,'ExposureType']='(%)'
-    
-    
-    n_comb_effp.columns = n_comb_eff.columns
-    
-    
-    n_comb_eff=n_comb_eff.append(n_comb_effp)
-    n_comb_eff.loc[:,'Checked']=''
-    #n_comb_eff.loc[:,'Authorised']=''
-    #n_comb_eff.sort(['Port_code','ExposureType'], ascending=False).set_index(['Port_code','ExposureType']).to_csv('c:\data\check.csv')
-    
-    n_comb_eff_1=n_comb_eff.sort_values(['Port_code','ExposureType'], ascending=True).set_index(['Port_code','ExposureType'])
-    n_comb_eff_1['Trade_YN']=''   
-    n_comb_eff_1['Comment']=''
-    # write excel report
-    exl_rep(output_folder,dic_users,n_comb_eff_1,startDate)
-    #excel_fx(output_folder,dic_users,n_comb_eff_1,startDate)
-    #exl_rep('c:\\data\\',dic_users,n_comb_eff_1,startDate)
-    print("\nReport Complete")
-    #n_comb_eff.sort(['Port_code','ExposureType'], ascending=False).set_index(['Port_code','ExposureType']).to_html(open('c:\data\check.html','w'),formatters='{:,.0f}'.format)
-    
-    
-    #grp=n_comb_eff.groupby(['Port_code','ExposureType']).agg({'FundValue_R':'sum','EquityExposure_R':'sum'})
-    
-    
-    #n_comb_eff=n_comb_eff.pivot(index='Port_code', columns='ExposureType')
-    
-    
-    
-    
-    #n_comb.to_csv('c:\data\check.csv')
-        
-    
+
         

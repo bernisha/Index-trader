@@ -14,12 +14,15 @@ import os
 from datetime import datetime, timedelta
 import openpyxl as px
 from openpyxl.styles import colors, Font, Border, Side ,Protection
-import openpyxl.cell
-from openpyxl import load_workbook
+#import openpyxl.cell
+#from openpyxl import load_workbook
+from write_excel import select_fund as sf
+import xlsxwriter
 
 
 start_time = datetime.now() 
 
+auto_trade=True
 output_folder= 'c:/data/'
 
 
@@ -28,7 +31,7 @@ st_row = 19
 st_it = st_row+1
 
 st_col= 'C'
-writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
+#writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
 
 #hdr = new_dat_pf.columns.tolist()
 
@@ -37,8 +40,9 @@ new = new_dat_pf.reset_index()
 new= new[~new.AssetType5.isin(['SSF DIV'])]
 
 new_flow = n_comb
-inv=(new_flow[['Port_code','fin_teff_cash','fin_tot_cash', 'InvType']]).set_index('Port_code').T.to_dict('list')
-    
+inv=(new_flow[['Port_code','fin_teff_cash','fin_tot_cash', 'InvType','CashFlowFlag','Min_EffCash','Max_EffCash','Min_TotalCash','Max_TotalCash']]).set_index('Port_code').T.to_dict('list')
+
+lst_fund = sf(False)    
 #new.pivot(index=['Port_code','AssetType1'], columns= 'AssetType3', values='EffExposure')
 
 #h=pd.pivot_table(new,  index=['Port_code'],columns=['AssetType1','AssetType3'], values=['EffExposure','EffWgt'],aggfunc=np.sum)
@@ -133,16 +137,23 @@ qf=qf.rename(index={'A. VAL':'VAL',
 
     
     
+
 writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
     
-qf.to_excel(writer, sheet_name='Sheet1', startrow=st_row, startcol =0, header = False)
 #wf.to_excel(writer, sheet_name='Sheet1', startrow=st_row, startcol =5)
 
+qf.to_excel(writer, sheet_name='Summary', startrow=st_row, startcol =0, header = False)
 
 workbook  = writer.book
-worksheet = writer.sheets['Sheet1']
+
+workbook.filename= output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm'
+workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
 
 
+#writer.save()
+
+
+worksheet = writer.sheets['Summary']
 
 
 cell_format1 = workbook.add_format({'bold': True, 'font_color': 'black', 'font':12})
@@ -157,9 +168,9 @@ cell_format2_4 = workbook.add_format({'bold': True, 'font_color': 'white', 'font
 
 
 cell_format3 = workbook.add_format({'bold': True, 'bg_color':'#CCFFFF', 'font':11, 'locked':False })
-cell_format4 = workbook.add_format({'bold': True, 'bg_color':'#339966', 'font':11, 'locked':False })
-cell_format5 = workbook.add_format({'bold': True, 'bg_color':'#C0C0C0', 'font':11, 'locked':False,'align': 'center','border': 1})
-cell_format6 = workbook.add_format({'bold': True, 'bg_color':'#CCFFFF', 'font':11, 'locked':False,'align': 'center','border':1})
+#cell_format4 = workbook.add_format({'bold': True, 'bg_color':'#339966', 'font':11, 'locked':False })
+cell_format5 = workbook.add_format({'bold': True, 'bg_color':'#C0C0C0', 'font':11, 'align': 'center','border': 1})
+cell_format6 = workbook.add_format({'bold': True, 'bg_color':'#CCFFFF', 'font':11,  'align': 'center','border':1})
 
 cell_format5_1 = workbook.add_format({'bold': False, 'bg_color':'#C0C0C0', 'font':10, 'locked':False,'num_format': 'R#,##0','font_color': 'red'  })
 cell_format5_2 = workbook.add_format({'bold': False, 'bg_color':'#C0C0C0', 'font':10, 'locked':False,'num_format': '0.00%','font_color': 'red'  })
@@ -174,17 +185,18 @@ cell_format6_3 = workbook.add_format({'bold': False, 'bg_color':'#CCFFFF', 'font
 cell_format6_4 = workbook.add_format({'bold': False, 'bg_color':'#CCFFFF', 'font':10, 'locked':False,'num_format': '0.00%', 'font_color': 'black' })
 
 
-cell_format7 = workbook.add_format({'bold': True, 'bg_color':'#CCFFCC', 'font':11, 'locked':False,'align': 'center','border': 1})
-cell_format8 = workbook.add_format({'bold': True, 'font':11, 'font_color': '#339966', 'locked':False,'align': 'center','border': 1})
+cell_format7 = workbook.add_format({'bold': True, 'bg_color':'#CCFFCC', 'font':11, 'align': 'center','border': 1})
+cell_format8 = workbook.add_format({'bold': True, 'font':11, 'font_color': '#339966','align': 'center','border': 1})
 
-td_cell_format_1 = workbook.add_format({'bold': True, 'bg_color':'#FFC7CE', 'font':10, 'locked':False,'font_color': '#9C0006'  })
-td_cell_format_2 = workbook.add_format({'bold': True, 'bg_color':'#C6EFCE', 'font':10, 'locked':False,'font_color': '#006100'  })
+td_cell_format_1 = workbook.add_format({'bold': True, 'bg_color':'#FFC7CE', 'font':10,'font_color': '#9C0006'  })
+td_cell_format_2 = workbook.add_format({'bold': True, 'bg_color':'#C6EFCE', 'font':10,'font_color': '#006100'  })
 
-td_cell_format_3 = workbook.add_format({'bold': True, 'bg_color':'#FF0000', 'font':10, 'locked':False,'font_color': '#9C0006','align': 'center'  })
+#td_cell_format_3 = workbook.add_format({'bold': True, 'bg_color':'#FF0000', 'font':10, 'locked':False,'font_color': '#9C0006','align': 'center'  })
 td_cell_format_4 = workbook.add_format({'bold': True, 'bg_color':'#CCCCFF', 'font':11, 'locked':False,'font_color': '#0000FF','align': 'center'  })
 td_cell_format_4.set_font_size(11)
                                       
 format1 = workbook.add_format({'num_format': 'R#,##0'})
+format1_1 = workbook.add_format({'num_format': 'R#,##0', 'locked': False})
 format2 = workbook.add_format({'num_format': '0.000%'})     
 
 
@@ -246,6 +258,7 @@ fmts2_2=[cell_format5_3,cell_format6_3] # black R
 
 fmts3_1=[cell_format5_2,cell_format6_2] # red %
 fmts3_2=[cell_format5_4,cell_format6_4] # black %
+cell_format1_1 = workbook.add_format({'bold': True, 'font_color': 'black', 'font':12, 'locked': False})
 
 jet=0
 worksheet.set_column('A:A', 24)
@@ -269,13 +282,9 @@ for j in lst_fund:
     worksheet.write_string(str(alp[st_col]+str(st_row-6)), 'Target',cell_format2)
     worksheet.write_string(str(alp[st_col+1]+str(st_row-6)), 'Post Trade',cell_format2)
     worksheet.write_formula(get_pl3,str('='+get_pl2+'/('+str(alp[st_col]+str(st_row+1))+'+'+get_pl2+')'),fmts[jet])
-    worksheet.merge_range(str(alp[st_col]+str(st_row-3)+":"+alp[st_col+1]+str(st_row-3)), futures_dict[j][0] ,cell_format7)
-    worksheet.merge_range(str(alp[st_col]+str(st_row-2)+":"+alp[st_col+1]+str(st_row-2)), dic_om_index[j][1] ,cell_format8)
-    worksheet.write_number(str(alp[st_col]+str(st_row-8)), cashflow_dict[j][0] ,format1)
-    worksheet.write_number(str(alp[st_col]+str(st_row-5)), inv[j][0] ,fmts3_2[jet])
-    worksheet.write_number(str(alp[st_col]+str(st_row-4)), inv[j][1] ,fmts3_2[jet])
+    worksheet.write_number(str(alp[st_col]+str(st_row-8)), cashflow_dict[j][0] ,format1_1)
     
-    worksheet.write_string(get_pl4, inv[j][2] ,cell_format1)
+    worksheet.write_string(get_pl4, inv[j][2] ,cell_format1_1)
     worksheet.data_validation(get_pl4, {'validate': 'list',
                                         'source': ['Investment', 
                                                    'Hedged Withdrawal', 
@@ -285,9 +294,18 @@ for j in lst_fund:
                                         'input_title': 'Enter a cash flow',
                                         'input_message': 'Type & Value'} )
     
-     
-   # worksheet.write_formula(get_pl5, str('='+str(alp[st_col+1]+str(st_row+26))),fmts3_2[jet])
-   # worksheet.write_formula(get_pl6, str('='+str(alp[st_col+1]+str(st_row+17))),fmts3_2[jet])
+    if auto_trade:
+        worksheet.write_number(str(alp[st_col]+str(st_row-5)), inv[j][0] ,fmts3_2[jet])
+        worksheet.write_number(str(alp[st_col]+str(st_row-4)), inv[j][1] ,fmts3_2[jet])
+        worksheet.conditional_format(get_pl5,{'type': 'cell','criteria': '!=','value': inv[j][0] ,'format': td_cell_format_4})
+        worksheet.conditional_format(get_pl6,{'type': 'cell','criteria': '!=','value': inv[j][1] ,'format': td_cell_format_4})
+    
+    else: 
+        worksheet.write_formula(get_pl5, str('='+str(alp[st_col+1]+str(st_row+26))),fmts3_2[jet])
+        worksheet.write_formula(get_pl6, str('='+str(alp[st_col+1]+str(st_row+17))),fmts3_2[jet])
+        worksheet.conditional_format(get_pl5,{'type': 'cell','criteria': '!=','value': str('='+str(alp[st_col+1]+str(st_row+26))) ,'format': td_cell_format_4})
+        worksheet.conditional_format(get_pl6,{'type': 'cell','criteria': '!=','value': str('='+str(alp[st_col+1]+str(st_row+17))) ,'format': td_cell_format_4})
+    
     
     worksheet.write_formula(get_pl7, str('='+str(alp[st_col+1]+str(st_row+56))),fmts3_2[jet])
     worksheet.write_formula(get_pl8, str('='+str(alp[st_col+1]+str(st_row+47))),fmts3_2[jet])
@@ -297,16 +315,18 @@ for j in lst_fund:
     worksheet.conditional_format(get_pl3, {'type': 'cell','criteria': '<','value': 0,'format': fmts3_1[jet]})                              
     worksheet.conditional_format(get_pl3, {'type': 'cell','criteria': '>=','value': 0,'format': fmts3_2[jet]})      
     
-    worksheet.conditional_format(get_pl4,{'type': 'cell','criteria': 'equal to','value': '"No cash flow"','format': cell_format1})
+    worksheet.conditional_format(get_pl4,{'type': 'cell','criteria': 'equal to','value': '"No cash flow"','format': cell_format1_1})
     worksheet.conditional_format(get_pl4,{'type': 'cell','criteria': '!=','value': '"No cash flow"','format': td_cell_format_4})
-    worksheet.conditional_format(get_pl5,{'type': 'cell','criteria': '!=','value': inv[j][0] ,'format': td_cell_format_4})
-    worksheet.conditional_format(get_pl6,{'type': 'cell','criteria': '!=','value': inv[j][1] ,'format': td_cell_format_4})
+    
+    worksheet.merge_range(str(alp[st_col]+str(st_row-3)+":"+alp[st_col+1]+str(st_row-3)), futures_dict[j][0] ,cell_format7)
+    worksheet.merge_range(str(alp[st_col]+str(st_row-2)+":"+alp[st_col+1]+str(st_row-2)), dic_om_index[j][1] ,cell_format8)
+   
     
     for g in range(st_row, st_row+ 25):
         if g in [st_row+1, st_row+2,st_row+7, st_row+11,st_row+13]:
             
-            worksheet.conditional_format(str(alp[st_col]+str(g)),{'type': 'cell','criteria': '!=','value': inv[j][1] ,'format': format1_b})
-            worksheet.conditional_format(str(alp[st_col+1]+str(g)),{'type': 'cell','criteria': '!=','value': inv[j][1] ,'format': format2_b})
+            worksheet.conditional_format(str(alp[st_col]+str(g)),{'type': 'cell','criteria': '!=','value': inv[j][0] ,'format': format1_b})
+            worksheet.conditional_format(str(alp[st_col+1]+str(g)),{'type': 'cell','criteria': '!=','value': inv[j][0] ,'format': format2_b})
     
     #worksheet.conditional_format(get_pl4,{'type': 'cell','criteria': 'equal to','value': '"No cash flow"','format': cell_format1})
     
@@ -331,10 +351,10 @@ worksheet.set_row((st_row+11), None, None, {'level': 1})
 worksheet.set_row((st_row+13), None, None, {'level': 1})
 
 worksheet.set_row(st_row-1, None, cell_format2_4)
-worksheet.merge_range(str('A'+str(st_row)+':B'+str(st_row)),'Pre Trade', cell_format2_4)
+worksheet.merge_range(str('A'+str(st_row)+':B'+str(st_row)),'PRE-TRADE', cell_format2_4)
 
 # end grouping
-def form_at(st_no=(st_row+len(qf)),_label_='Inflow'):
+def form_at(st_no=(st_row+len(qf)),_label_='INCLUDING FLOWS'):
     in_st=st_no
     in_cell_format1 = workbook.add_format({'bold': True, 'font_color': 'black', 'border':1, 'align': 'center', 'valign': 'top' })
     bn_cell_format1 = workbook.add_format({'bold': True, 'font_color': 'black', 'border':1, 'align': 'center', 'valign': 'top','bg_color':'#FF8080' })
@@ -375,13 +395,13 @@ def form_at(st_no=(st_row+len(qf)),_label_='Inflow'):
     worksheet.set_row((in_st+12), None, None, {'level': 1})
     worksheet.set_row((in_st+14), None, None, {'level': 1})
     
-    if _label_=='Post Trade':
+    if _label_=='POST-TRADE':
          worksheet.write_string(str('B'+str(in_st+17)), 'BARRA CASH',bn_cell_format1)
         
 
 form_at()
-form_at(st_no=(st_row+2*len(qf)+1),_label_='Trade')
-form_at(st_no=(st_row+3*len(qf)+2),_label_='Post Trade')
+form_at(st_no=(st_row+2*len(qf)+1),_label_='TRADE')
+form_at(st_no=(st_row+3*len(qf)+2),_label_='POST-TRADE')
 
 
 # Write formula
@@ -450,9 +470,13 @@ for f in lst_fund:
                             str('=IF(ISERROR('+str(alp[td_col]+str(td_st+9))+'*'+str(alp[td_col+1]+str(td_st-21))+'*10),0,'+\
                                                    str(alp[td_col]+str(td_st+9))+'*'+str(alp[td_col+1]+str(td_st-21))+'*10)'), informat1_n)
     worksheet.write_formula(str(alp[td_col]+str(td_st+9)),\
-                            str('=IF('+str(alp[td_col]+str(td_st-33))+'="No Future",0,ROUNDDOWN((('+str(alp[td_col]+str(td_st-34))+'-'+str(alp[td_col]+str(td_st-35))+\
+              #              str('=IF('+str(alp[td_col]+str(td_st-33))+'="No Future",0,INT((ROUND('+str(alp[td_col]+str(td_st-34))+'-'+str(alp[td_col]+str(td_st-35))+\
+                            str('=IF('+str(alp[td_col]+str(td_st-33))+'="No Future",0,IF(('+str(alp[td_col]+str(td_st-34))+'-'+str(alp[td_col]+str(td_st-35))+\
+                                '-'+str(alp[td_col+1]+str(td_st-8))+')>0,ROUNDDOWN((('+str(alp[td_col]+str(td_st-34))+'-'+str(alp[td_col]+str(td_st-35))+\
                                 '-'+str(alp[td_col+1]+str(td_st-8))+')*'+str(alp[td_col]+str(td_st-14))+')/'+ \
-                                    str(alp[td_col+1]+str(td_st-21))+'/10,0))'),cell_format2_1)
+                                    str(alp[td_col+1]+str(td_st-21))+'/10,0),ROUNDUP(ROUND((('+str(alp[td_col]+str(td_st-34))+'-'+str(alp[td_col]+str(td_st-35))+\
+                                '-'+str(alp[td_col+1]+str(td_st-8))+')*'+str(alp[td_col]+str(td_st-14))+')/'+ \
+                                    str(alp[td_col+1]+str(td_st-21))+'/10,9),0)'+'))'),cell_format2_1)
     worksheet.write_formula(str(alp[td_col+1]+str(td_st+9)),str('=IF('+str(alp[td_col]+str(td_st+9))+'<0,"SOC",IF('+str(alp[td_col]+str(td_st+9))\
                                                             +'>0,"BOC",""))'),informat1_n) 
     
@@ -521,16 +545,30 @@ for f in lst_fund:
         if g in [pt_st+1,pt_st+2,pt_st+7,pt_st+11,pt_st+13,pt_st+16]:
             worksheet.write_formula(str(alp[pt_col+1]+str(g)),str('='+str(alp[pt_col]+str(g))+'/'+str(alp[pt_col]+'$'+str(pt_st+1))),informat2_b)
      #       print(str('B='+str(alp[td_col]+str(g))+'/'+str(alp[td_col]+'$'+str(td_st+1))))
-        elif g in [pt_st+3,pt_st+4,pt_st+5,pt_st+6,pt_st+8,pt_st+12,pt_st+14]:
+        elif g in [pt_st+3,pt_st+4,pt_st+5,pt_st+6,pt_st+8,pt_st+10,pt_st+12,pt_st+14]:
             worksheet.write_formula(str(alp[pt_col+1]+str(g)),str('='+str(alp[pt_col]+str(g))+'/'+str(alp[pt_col]+'$'+str(pt_st+1))),informat2_n)
      #       print(str('N='+str(alp[td_col]+str(g))+'/'+str(alp[td_col]+'$'+str(td_st+1))))
         else:
             gg=1
    
-     worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+11)), {'type': 'cell','criteria': '<','value': 0,'format': pt_cell_format_1})    
-     worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+11)), {'type': 'cell','criteria': '>','value': 0,'format': pt_cell_format_2})
-       
+    # worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+11)), {'type': 'cell','criteria': '<','value': 0,'format': pt_cell_format_1})    
+    # worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+11)), {'type': 'cell','criteria': '>','value': 0,'format': pt_cell_format_2})
+     
+     worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+11)), {'type':'cell','criteria': 'between','minimum': inv[f][4],
+                                  'maximum': inv[f][5],'format': pt_cell_format_2})
     
+     worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+11)), {'type':'cell','criteria': 'not between','minimum':  inv[f][4], 
+                                       'maximum':  inv[f][5],
+                                       'format':   pt_cell_format_1})
+       
+     worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+2)), {'type':'cell','criteria': 'between','minimum':  inv[f][6], 
+                                       'maximum':  inv[f][7],
+                                       'format':   pt_cell_format_2})
+    
+     worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+2)), {'type':'cell','criteria': 'not between','minimum':  inv[f][6], 
+                                       'maximum':  inv[f][7],
+                                       'format':   pt_cell_format_1})
+     
      pt_col=pt_col+2
                        
 del f 
@@ -538,23 +576,47 @@ del g
 del gg
 
 worksheet.freeze_panes(19,2)
-worksheet.write_comment('C10', 'Enter cash flow info below', {'start_col': 5,'start_row': 7, 'x_scale': 1.2, 'y_scale': 0.25, 'visible': True ,'font_size': 11, 'bold':True ,'color': '#FFCC99'})
+#worksheet.write_comment('C10', 'Enter cash flow info below', {'start_col': 5,'start_row': 7, 'x_scale': 1.2, 'y_scale': 0.25, 'visible': True ,'font_size': 11, 'bold':True ,'color': '#FFCC99'})
 
+#pandaswb = writer.book
+#pandaswb.filename =  output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm'
+#pandaswb.add_vba_project('C:/Program Files (x86)/WinPython/python-3.6.5.amd64/Scripts/vbaProject.bin')
+
+#pandaswb.save()        
+#pandaswb.close()                                                           
 writer.save()
 workbook.close()
+
+
+mywb = px.load_workbook(output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm', keep_vba=True)
+mysheet = mywb.active
+
+border1=Border(right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+for j in range(4, 4+len(n_comb)*2-2,2):
+ #   print(j)
+    mysheet.cell(row = 7, column = j).border = border1
+    mysheet.cell(row = 16, column = j).border = border1
+    mysheet.cell(row = 17, column = j).border = border1
+       
+
+mysheet.protection.sheet = False
+mysheet.protection.password = 'Flower'
+
+mywb.save(output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm') 
+    
+os.startfile(output_folder)  
+    
+
+#import win32com.client #import Dispatch
+
+#xl = win32com.client.Dispatch("Excel.Application")  # Set up excel
+#wb=xl.Workbooks.Open(Filename = output_folder+'BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm')         # Open .xlsm file from step 2A
+#xl.Application.Run("Module1")                  # Run VBA_macro.bin
+#xl.Application.Run("auto_open")
 
 time_elapsed = datetime.now() - start_time 
 print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
 
 
-"' ################################################################################################################# '"
-wb = load_workbook(output_file)
-ws = wb.active
-ws.delete_cols(2)
-wb.save('c:\\data\\test_file.xlsx')
-    # or by name: ws = wb['SheetName']
-col = 'A'
-    del_col(ws, col)
-    wb.save('output_book.xlsx')
-
- delete_column = openpyxl.cell.column_index_from_string(col)
+#workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
