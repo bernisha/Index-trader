@@ -4,6 +4,245 @@ Created on Thu Mar 29 15:02:40 2018
 
 @author: blala
 """
+
+"""
+'******************************************************************************************************************************************************************************    
+'                                                      Create asset classifications (multiple levels)
+                                                                 for futures trades
+'******************************************************************************************************************************************************************************    
+"""
+
+def assetClassF(Sec_type, ins_code,sec_nam,cash_flows_eff):
+    
+        #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
+        ssf=['S']
+        #excp=['OMLF'+str((cash_flows_eff['fut_sufx'].values)[0]),'OMAF'+str((cash_flows_eff['fut_sufx'].values)[0])]
+        excp=['F']
+        ind_fut=[str((cash_flows_eff['fut_sufx'].values)[0])] # index future suffix
+        
+        if Sec_type == 'CASH : CALL ACC':
+            return "Total cash,Settled cash,Cash on call,Total cash"
+        elif Sec_type=='CASH : SAFEX AC':
+            return "Total cash,Settled cash,Futures margin,Total cash"
+        elif Sec_type == "CURRENCY" and sec_nam=='VAL':
+            return "Total cash,Settled cash,Val cash,Total cash"
+        elif Sec_type=="PAYABLE" and sec_nam=='DIF':
+            return "Total cash,Unsettled cash,Dif cash,Total cash"
+        elif Sec_type=='FUTRE STCK INDX':
+            return str("Futures Exposure,"+"Index Future,"+str(ins_code[0:4]+ind_fut[0])+",Futures Exposure")
+    #    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
+        elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
+    #        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
+            return str("Futures Exposure,"+"SSF,null"+",Futures Exposure")
+        elif Sec_type=='EQ : ORDINARY':
+            return "Equity Exposure,Equity,null,Equity Exposure"
+        elif Sec_type=='EQ : RIGHTS':
+            return "Equity Exposure,Equity Rights,null,Equity Exposure"
+        elif Sec_type=='EQ : FOREIGN':
+            return "Equity Exposure,Equity Foreign,null,Equity Exposure"
+        elif ins_code[3:4] in(excp):
+    #        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
+            return str("Dividend Exposure,"+"SSF Div,null,Dividend Exposure")
+        elif Sec_type=="FUND : LOC EQ":
+            return str("Equity Exposure,"+"Equity Fund,"+str(ins_code)+",Equity Exposure")
+        else:
+            return "Other,null,null,Other"
+            
+            
+def res_indF(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','AssetType4','Quantity','EffExposure','MarketValue','FundValue','Close_price']):
+    dat=dat.reset_index()
+    dat['AssetType1']=des
+    dat['AssetType2']='null'
+    dat['AssetType3']='null'
+    dat['AssetType4']='null'
+    dat=dat[ind]
+    return dat
+
+
+def assetClassB(Sec_type, ins_code,sec_nam,cash_flows_eff):
+
+    #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
+    ssf=['S']
+    #excp=['OMLF'+str((cash_flows_eff['fut_sufx'].values)[0]),'OMAF'+str((cash_flows_eff['fut_sufx'].values)[0])]
+    excp=['F']
+    ind_fut=[str((cash_flows_eff['fut_sufx'].values)[0])] # index future suffix
+    
+    if Sec_type == 'CASH : CALL ACC':
+        return "A. Total cash,Settled cash,Cash on call,Total cash,C. CALL"
+    elif Sec_type=='CASH : SAFEX AC':
+        return "A. Total cash,Settled cash,Futures margin,Total cash,D. SAFEX"
+    elif Sec_type == "CURRENCY" and sec_nam=='VAL':
+        return "A. Total cash,Settled cash,Val cash,Total cash,A. VAL"
+    elif Sec_type=="PAYABLE" and sec_nam=='DIF':
+        return "A. Total cash,Unsettled cash,Dif cash,Total cash,B. DIF"
+    elif Sec_type=='FUTRE STCK INDX':
+        return str("B. Futures Exposure,"+"Index Future,"+str(ins_code[0:4]+ind_fut[0])+",Futures Exposure,A. INDEX FUTURES")
+
+
+#    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
+    elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
+#        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
+        return str("B. Futures Exposure,"+"SSF,null"+",Futures Exposure"+",B. SSF")
+    elif Sec_type=='EQ : ORDINARY':
+        return "Equity Exposure,Equity,null,Equity Exposure,EQUITY"
+    elif Sec_type=='EQ : RIGHTS':
+        return "Equity Exposure,Equity Rights,null,Equity Exposure,EQUITY"
+    elif Sec_type=='EQ : FOREIGN':
+        return "Equity Exposure,Equity Foreign,null,Equity Exposure,EQUITY"
+    elif ins_code[3:4] in(excp):
+#        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
+        return str("Dividend Exposure,"+"SSF Div,null,Dividend Exposure,SSF DIV")
+    elif Sec_type=="FUND : LOC EQ":
+        return str("Equity Exposure,"+"Equity Fund,"+str(ins_code)+",Equity Exposure,EQUITY")
+    else:
+        return "Other,null,null,Other,OTHER"
+        
+        
+def res_indB(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','AssetType4','AssetType5','Quantity','EffExposure','MarketValue','FundValue','Close_price']):
+    dat=dat.reset_index()
+    dat['AssetType1']=des
+    dat['AssetType2']='null'
+    dat['AssetType3']='null'
+    dat['AssetType4']='null'
+    dat['AssetType5']='null'
+    dat=dat[ind]
+    return dat
+
+"""
+'******************************************************************************************************************************************************************************    
+'                                                      FX to create trade & portfolio level statistics - futures
+'******************************************************************************************************************************************************************************    
+"""
+
+    
+
+
+def fx_dtaF(dfprt_x,  startDate):
+    import pandas as pd
+    import numpy as np
+    from write_excel import res_indF as res_ind
+    
+    dfprt_1=dfprt_x.groupby(['Trade_date','Port_code','AssetType1','AssetType2','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','Quantity':'sum','Close_price':'max'})
+    dfprt_1=dfprt_1.reset_index()
+    dfprt_2= (dfprt_1.groupby(['Trade_date','Port_code']).agg({'MarketValue':'sum'})).reset_index()
+    dfprt_1=pd.merge( dfprt_1,dfprt_2, on=['Trade_date','Port_code'])
+    dfprt_1.rename(columns={'MarketValue_x':'MarketValue', 'MarketValue_y':'FundValue'}, inplace=True)
+    dfprt_1=dfprt_1[['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','MarketValue','EffExposure','Quantity','FundValue','Close_price']]
+    dfprt_1=dfprt_1.groupby(['Trade_date','Port_code','AssetType1','AssetType2','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'})
+    
+    req_sum={'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'}
+    total_cash= (dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['Total cash']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)
+    
+    effective_cash=((total_cash-(dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['Futures Exposure']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)).fillna(0))
+    effective_cash['MarketValue']=0
+    effective_cash['FundValue']=total_cash[['FundValue']].values
+    effective_cash['EffExposure']=np.where(effective_cash[['EffExposure']].values==0,total_cash[['EffExposure']].values, effective_cash[['EffExposure']].values)
+    
+    
+    cash_dat=res_ind(effective_cash,'Effective cash').reset_index()
+    cash_dat['Trade_date']=startDate
+    cash_dat=(cash_dat[['Trade_date', 'Port_code','AssetType1','AssetType2','AssetType3', 'Quantity','EffExposure','MarketValue','FundValue','Close_price']])
+    new_dat=((pd.concat([dfprt_1.reset_index(),cash_dat],axis=0,sort=True).reset_index().drop('index',axis=1)).sort_values(['Port_code','AssetType1','AssetType2','AssetType3'])).set_index(['Trade_date','Port_code','AssetType1','AssetType2','AssetType3'])
+    new_dat['EffWgt']=new_dat[['EffExposure']].values/new_dat[['FundValue']].values
+    new_dat['MktWgt']=new_dat[['MarketValue']].values/new_dat[['FundValue']].values
+    n_1 = new_dat.reset_index()
+    n_1=n_1.groupby(['Port_code','AssetType1']).agg({'EffExposure':'sum','EffWgt':'sum'})
+    n_1=n_1[~(n_1.index.get_level_values('AssetType1').isin(['Dividend Exposure']))]
+    n_2=n_1.reset_index()
+    fnd_value=(total_cash[['FundValue']].reset_index().set_index('Port_code')[['FundValue']]).reset_index()
+    fnd_value['AssetType1']='Fund Value'
+    fnd_value['EffWgt']=1
+    fnd_value.columns= ['Port_code','EffExposure','AssetType1','EffWgt']  
+    fnd_value=fnd_value[n_2.columns]
+    n_3=n_2.append(fnd_value)
+    n_3=n_3.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffExposure')
+    n_4=n_2.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffWgt')
+    
+    n_3.columns=[sym.replace(" ", "")+'_R'  for sym in n_3.columns]
+    n_4.columns=[sym.replace(" ", "")+'_p'  for sym in n_4.columns]
+    
+    n_comb=n_3.merge(n_4, left_index=True, right_index=True)   
+    n_comb[['FuturesExposure_R']]=(n_comb[['FuturesExposure_R']]).fillna(0)   
+    n_comb[['FuturesExposure_p']]=(n_comb[['FuturesExposure_p']]).fillna(0)   
+    lst = [new_dat, n_comb]
+    return lst
+
+def fx_dtaB(dfprt_x, startDate):
+    import pandas as pd
+    import numpy as np
+    from write_excel import res_indB as res_ind
+ 
+    
+    dfprt_1=dfprt_x.groupby(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','Quantity':'sum','Close_price':'max'})
+    dfprt_1=dfprt_1.reset_index()
+    dfprt_2= (dfprt_1.groupby(['Trade_date','Port_code']).agg({'MarketValue':'sum'})).reset_index()
+    dfprt_1=pd.merge( dfprt_1,dfprt_2, on=['Trade_date','Port_code'])
+    dfprt_1.rename(columns={'MarketValue_x':'MarketValue', 'MarketValue_y':'FundValue'}, inplace=True)
+    dfprt_1=dfprt_1[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','MarketValue','EffExposure','Quantity','FundValue','Close_price']]
+    dfprt_1=dfprt_1.groupby(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'})
+    
+    req_sum={'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'}
+    total_cash= (dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['A. Total cash']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)
+    
+    effective_cash=((total_cash-(dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['B. Futures Exposure']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)).fillna(0))
+    effective_cash['MarketValue']=0
+    effective_cash['FundValue']=total_cash[['FundValue']].values
+    effective_cash['EffExposure']=np.where(effective_cash[['EffExposure']].values==0,total_cash[['EffExposure']].values, effective_cash[['EffExposure']].values)
+    
+    
+    cash_dat=res_ind(effective_cash,'Effective cash').reset_index()
+    cash_dat['Trade_date']=startDate
+    cash_dat=(cash_dat[['Trade_date', 'Port_code','AssetType1','AssetType5','AssetType3', 'Quantity','EffExposure','MarketValue','FundValue','Close_price']])
+    new_dat=((pd.concat([dfprt_1.reset_index(),cash_dat],axis=0, sort=True).reset_index().drop('index',axis=1)).sort_values(['Port_code','AssetType1','AssetType5','AssetType3'])).set_index(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3'])
+    new_dat['EffWgt']=new_dat[['EffExposure']].values/new_dat[['FundValue']].values
+    new_dat['MktWgt']=new_dat[['MarketValue']].values/new_dat[['FundValue']].values
+    n_1 = new_dat.reset_index()
+    n_1=n_1.groupby(['Port_code','AssetType1']).agg({'EffExposure':'sum','EffWgt':'sum'})
+    n_1=n_1[~(n_1.index.get_level_values('AssetType1').isin(['Dividend Exposure']))]
+    n_2=n_1.reset_index()
+    fnd_value=(total_cash[['FundValue']].reset_index().set_index('Port_code')[['FundValue']]).reset_index()
+    fnd_value['AssetType1']='Fund Value'
+    fnd_value['EffWgt']=1
+    fnd_value.columns= ['Port_code','EffExposure','AssetType1','EffWgt']  
+    fnd_value=fnd_value[n_2.columns]
+    n_3=n_2.append(fnd_value)
+    n_3=n_3.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffExposure')
+    n_4=n_2.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffWgt')
+    
+    n_3.columns=[sym.replace(" ", "")+'_R'  for sym in n_3.columns]
+    n_4.columns=[sym.replace(" ", "")+'_p'  for sym in n_4.columns]
+    
+    n_comb=n_3.merge(n_4, left_index=True, right_index=True)   
+    n_comb[['B.FuturesExposure_R']]=(n_comb[['B.FuturesExposure_R']]).fillna(0)   
+    n_comb[['B.FuturesExposure_p']]=(n_comb[['B.FuturesExposure_p']]).fillna(0)   
+    lst = [new_dat, n_comb]
+    return lst
+
+"""
+'******************************************************************************************************************************************************************************    
+'                                                      Create a check so futures trade is not below the minimum 
+                '                                                       effective cash
+'******************************************************************************************************************************************************************************    
+"""
+
+
+
+def chck_fut(no_fut, eff_cash, mx_eff_cash, mn_eff_cash, tgt_eff_cash, cls_price, fnd_value):
+        eff_cash_pt=(-(no_fut*cls_price*10)/fnd_value)+eff_cash
+        #print(str(eff_cash_pt))
+        cnt=1
+        
+        while ((eff_cash_pt < mn_eff_cash)&(cnt<10)):
+            no_fut=no_fut-1
+            eff_cash_pt = (-(no_fut*cls_price*10)/fnd_value)+eff_cash
+            cnt=cnt+1
+           # print("Futures:"+str(no_fut)+", Eff cash"+str(eff_cash_pt))
+            return no_fut
+     
+            break
+        else:
+            return no_fut
+
 """
 '******************************************************************************************************************************************************************************    
 '                                                      Create a Pandas Excel writer using XlsxWriter as the engine
@@ -22,7 +261,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     import openpyxl as px
     from openpyxl.styles import colors, Font, Border, Side ,Protection
     import time
-    
+    from write_excel import select_fund as sf 
     
     output_file = output_folder+'\\IndexFutRep_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsx'
     st_row = 7
@@ -32,12 +271,20 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
           'Cash Flow','Totalcash', 'Effectivecash',
           'Tgt_EffCash', 'No. Futures / Price', 'FutureCode','Trade','FundValue', 'EquityExposure', 'Totalcash',
           'FuturesExposure', 'Effectivecash', 'Check cash', 'TradeSignal','TradeComment','Checked by']        
+    lst_fund= sf(False)
+    
+    n_comb_eff_1=n_comb_eff_1[(n_comb_eff_1.index.get_level_values('Port_code').isin(lst_fund))]
+    
+    
     n_comb_dta=n_comb_eff_1[['FundValue_R_pf', 'EquityExposure_R_pf', 'Totalcash_R_pf', 'FuturesExposure_R_pf','Effectivecash_R_pf',
                             'Inflow', 'Totalcash_R', 'Effectivecash_R',
                        #     'FundValue_R', 'EquityExposure_R', 'Totalcash_R', 'FuturesExposure_R','Effectivecash_R',
                             'Tgt_EffCash1', 'No. Futures', 'AssetType3','Trade',
                             'FundValue_TR', 'EquityExposure_TR', 'Totalcash_TR','FuturesExposure_TR', 'Effectivecash_TR', 'Check cash','Trade_YN','Comment','Checked']]
+    
     n_comb_dta.to_excel(writer, sheet_name='Sheet1', startrow=st_row, header=  hdr,index_label = ['Portfolio Code',' '])
+    
+    
     workbook  = writer.book
     worksheet = writer.sheets['Sheet1']
     
@@ -1233,8 +1480,8 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
       
     
-    for j in range(4, 4+len(lst_fund)*2-2,2):
-     #   print(j)
+    for j in range(4, 4+len(lst_fund)*2,2):
+      #  print(j)
         mysheet.cell(row = 7, column = j).border = border1
         mysheet.cell(row = 16, column = j).border = border1
         mysheet.cell(row = 17, column = j).border = border1

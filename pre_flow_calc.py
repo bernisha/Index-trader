@@ -31,6 +31,9 @@ from write_excel import CashFlowFlag as cff
 from write_excel import trade_calc as t_c
 from write_excel import bulk_cash_excel_report as bcer
 from write_excel import cash_flow_validity_fx as cfvf
+from write_excel import assetClassB as assetClass
+from write_excel import res_indB as res_ind
+from write_excel import fx_dtaB as fx_dta
 
 start_time = datetime.now() 
 
@@ -162,54 +165,54 @@ fut_flow['Sec_code']=np.where(fut_flow.Future_Code=='NoFuture','NoFuture',fut_fl
     
 # Map Sec type to more descriptive asset classes
 
-def assetClass(Sec_type, ins_code,sec_nam):
-
-    #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
-    ssf=['S']
-    #excp=['OMLF'+str((cash_flows_eff['fut_sufx'].values)[0]),'OMAF'+str((cash_flows_eff['fut_sufx'].values)[0])]
-    excp=['F']
-    ind_fut=[str((cash_flows_eff['fut_sufx'].values)[0])] # index future suffix
-    
-    if Sec_type == 'CASH : CALL ACC':
-        return "A. Total cash,Settled cash,Cash on call,Total cash,C. CALL"
-    elif Sec_type=='CASH : SAFEX AC':
-        return "A. Total cash,Settled cash,Futures margin,Total cash,D. SAFEX"
-    elif Sec_type == "CURRENCY" and sec_nam=='VAL':
-        return "A. Total cash,Settled cash,Val cash,Total cash,A. VAL"
-    elif Sec_type=="PAYABLE" and sec_nam=='DIF':
-        return "A. Total cash,Unsettled cash,Dif cash,Total cash,B. DIF"
-    elif Sec_type=='FUTRE STCK INDX':
-        return str("B. Futures Exposure,"+"Index Future,"+str(ins_code[0:4]+ind_fut[0])+",Futures Exposure,A. INDEX FUTURES")
-
-
-#    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
-    elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
-#        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
-        return str("B. Futures Exposure,"+"SSF,null"+",Futures Exposure"+",B. SSF")
-    elif Sec_type=='EQ : ORDINARY':
-        return "Equity Exposure,Equity,null,Equity Exposure,EQUITY"
-    elif Sec_type=='EQ : RIGHTS':
-        return "Equity Exposure,Equity Rights,null,Equity Exposure,EQUITY"
-    elif Sec_type=='EQ : FOREIGN':
-        return "Equity Exposure,Equity Foreign,null,Equity Exposure,EQUITY"
-    elif ins_code[3:4] in(excp):
-#        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
-        return str("Dividend Exposure,"+"SSF Div,null,Dividend Exposure,SSF DIV")
-    elif Sec_type=="FUND : LOC EQ":
-        return str("Equity Exposure,"+"Equity Fund,"+str(ins_code)+",Equity Exposure,EQUITY")
-    else:
-        return "Other,null,null,Other,OTHER"
-        
-        
-def res_ind(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','AssetType4','AssetType5','Quantity','EffExposure','MarketValue','FundValue','Close_price']):
-    dat=dat.reset_index()
-    dat['AssetType1']=des
-    dat['AssetType2']='null'
-    dat['AssetType3']='null'
-    dat['AssetType4']='null'
-    dat['AssetType5']='null'
-    dat=dat[ind]
-    return dat
+#def assetClassB(Sec_type, ins_code,sec_nam,cash_flows_eff):
+#
+#    #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
+#    ssf=['S']
+#    #excp=['OMLF'+str((cash_flows_eff['fut_sufx'].values)[0]),'OMAF'+str((cash_flows_eff['fut_sufx'].values)[0])]
+#    excp=['F']
+#    ind_fut=[str((cash_flows_eff['fut_sufx'].values)[0])] # index future suffix
+#    
+#    if Sec_type == 'CASH : CALL ACC':
+#        return "A. Total cash,Settled cash,Cash on call,Total cash,C. CALL"
+#    elif Sec_type=='CASH : SAFEX AC':
+#        return "A. Total cash,Settled cash,Futures margin,Total cash,D. SAFEX"
+#    elif Sec_type == "CURRENCY" and sec_nam=='VAL':
+#        return "A. Total cash,Settled cash,Val cash,Total cash,A. VAL"
+#    elif Sec_type=="PAYABLE" and sec_nam=='DIF':
+#        return "A. Total cash,Unsettled cash,Dif cash,Total cash,B. DIF"
+#    elif Sec_type=='FUTRE STCK INDX':
+#        return str("B. Futures Exposure,"+"Index Future,"+str(ins_code[0:4]+ind_fut[0])+",Futures Exposure,A. INDEX FUTURES")
+#
+#
+##    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
+#    elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
+##        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
+#        return str("B. Futures Exposure,"+"SSF,null"+",Futures Exposure"+",B. SSF")
+#    elif Sec_type=='EQ : ORDINARY':
+#        return "Equity Exposure,Equity,null,Equity Exposure,EQUITY"
+#    elif Sec_type=='EQ : RIGHTS':
+#        return "Equity Exposure,Equity Rights,null,Equity Exposure,EQUITY"
+#    elif Sec_type=='EQ : FOREIGN':
+#        return "Equity Exposure,Equity Foreign,null,Equity Exposure,EQUITY"
+#    elif ins_code[3:4] in(excp):
+##        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
+#        return str("Dividend Exposure,"+"SSF Div,null,Dividend Exposure,SSF DIV")
+#    elif Sec_type=="FUND : LOC EQ":
+#        return str("Equity Exposure,"+"Equity Fund,"+str(ins_code)+",Equity Exposure,EQUITY")
+#    else:
+#        return "Other,null,null,Other,OTHER"
+#        
+#        
+#def res_ind(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','AssetType4','AssetType5','Quantity','EffExposure','MarketValue','FundValue','Close_price']):
+#    dat=dat.reset_index()
+#    dat['AssetType1']=des
+#    dat['AssetType2']='null'
+#    dat['AssetType3']='null'
+#    dat['AssetType4']='null'
+#    dat['AssetType5']='null'
+#    dat=dat[ind]
+#    return dat
         
 """
 Fund, Benchmark, Corporate Action data import
@@ -245,11 +248,11 @@ df=df[(df.Port_code.isin(dic_om_index.keys()))]
 df.loc[:,'Benchmark_code']=df.Port_code.map(lambda x:dic_om_index[x][1])
       
 df['Trade_date']=startDate
-df['AssetType1']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name)).split(",")[0],axis=1)
-df['AssetType2']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name)).split(",")[1],axis=1)
-df['AssetType3']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name)).split(",")[2],axis=1)
-df['AssetType4']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name)).split(",")[3],axis=1)
-df['AssetType5']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name)).split(",")[4],axis=1)
+df['AssetType1']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[0],axis=1)
+df['AssetType2']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[1],axis=1)
+df['AssetType3']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[2],axis=1)
+df['AssetType4']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[3],axis=1)
+df['AssetType5']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[4],axis=1)
 df['MarketValue']= np.where(df[['AssetType1']].isin(['B. Futures Exposure','Dividend Exposure']),0, df[['Market_price']])
 df['EffExposure']= df[['Market_price']]
 
@@ -320,54 +323,54 @@ dfprt=dfprt_preflow.append(cash_flows, sort=True)
 '''
      
 
-def fx_dta(dfprt_x=dfprt):
-    dfprt_1=dfprt_x.groupby(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','Quantity':'sum','Close_price':'max'})
-    dfprt_1=dfprt_1.reset_index()
-    dfprt_2= (dfprt_1.groupby(['Trade_date','Port_code']).agg({'MarketValue':'sum'})).reset_index()
-    dfprt_1=pd.merge( dfprt_1,dfprt_2, on=['Trade_date','Port_code'])
-    dfprt_1.rename(columns={'MarketValue_x':'MarketValue', 'MarketValue_y':'FundValue'}, inplace=True)
-    dfprt_1=dfprt_1[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','MarketValue','EffExposure','Quantity','FundValue','Close_price']]
-    dfprt_1=dfprt_1.groupby(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'})
-    
-    req_sum={'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'}
-    total_cash= (dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['A. Total cash']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)
-    
-    effective_cash=((total_cash-(dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['B. Futures Exposure']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)).fillna(0))
-    effective_cash['MarketValue']=0
-    effective_cash['FundValue']=total_cash[['FundValue']].values
-    effective_cash['EffExposure']=np.where(effective_cash[['EffExposure']].values==0,total_cash[['EffExposure']].values, effective_cash[['EffExposure']].values)
-    
-    
-    cash_dat=res_ind(effective_cash,'Effective cash').reset_index()
-    cash_dat['Trade_date']=startDate
-    cash_dat=(cash_dat[['Trade_date', 'Port_code','AssetType1','AssetType5','AssetType3', 'Quantity','EffExposure','MarketValue','FundValue','Close_price']])
-    new_dat=((pd.concat([dfprt_1.reset_index(),cash_dat],axis=0, sort=True).reset_index().drop('index',axis=1)).sort_values(['Port_code','AssetType1','AssetType5','AssetType3'])).set_index(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3'])
-    new_dat['EffWgt']=new_dat[['EffExposure']].values/new_dat[['FundValue']].values
-    new_dat['MktWgt']=new_dat[['MarketValue']].values/new_dat[['FundValue']].values
-    n_1 = new_dat.reset_index()
-    n_1=n_1.groupby(['Port_code','AssetType1']).agg({'EffExposure':'sum','EffWgt':'sum'})
-    n_1=n_1[~(n_1.index.get_level_values('AssetType1').isin(['Dividend Exposure']))]
-    n_2=n_1.reset_index()
-    fnd_value=(total_cash[['FundValue']].reset_index().set_index('Port_code')[['FundValue']]).reset_index()
-    fnd_value['AssetType1']='Fund Value'
-    fnd_value['EffWgt']=1
-    fnd_value.columns= ['Port_code','EffExposure','AssetType1','EffWgt']  
-    fnd_value=fnd_value[n_2.columns]
-    n_3=n_2.append(fnd_value)
-    n_3=n_3.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffExposure')
-    n_4=n_2.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffWgt')
-    
-    n_3.columns=[sym.replace(" ", "")+'_R'  for sym in n_3.columns]
-    n_4.columns=[sym.replace(" ", "")+'_p'  for sym in n_4.columns]
-    
-    n_comb=n_3.merge(n_4, left_index=True, right_index=True)   
-    n_comb[['B.FuturesExposure_R']]=(n_comb[['B.FuturesExposure_R']]).fillna(0)   
-    n_comb[['B.FuturesExposure_p']]=(n_comb[['B.FuturesExposure_p']]).fillna(0)   
-    lst = [new_dat, n_comb]
-    return lst
+#def fx_dta(dfprt_x=dfprt, res_ind):
+#    dfprt_1=dfprt_x.groupby(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','Quantity':'sum','Close_price':'max'})
+#    dfprt_1=dfprt_1.reset_index()
+#    dfprt_2= (dfprt_1.groupby(['Trade_date','Port_code']).agg({'MarketValue':'sum'})).reset_index()
+#    dfprt_1=pd.merge( dfprt_1,dfprt_2, on=['Trade_date','Port_code'])
+#    dfprt_1.rename(columns={'MarketValue_x':'MarketValue', 'MarketValue_y':'FundValue'}, inplace=True)
+#    dfprt_1=dfprt_1[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','MarketValue','EffExposure','Quantity','FundValue','Close_price']]
+#    dfprt_1=dfprt_1.groupby(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3']).agg({'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'})
+#    
+#    req_sum={'EffExposure':'sum','MarketValue':'sum','FundValue':'max','Quantity':'max','Close_price':'max'}
+#    total_cash= (dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['A. Total cash']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)
+#    
+#    effective_cash=((total_cash-(dfprt_1[(dfprt_1.index.get_level_values('AssetType1').isin(['B. Futures Exposure']))]).reset_index().groupby(['Trade_date','Port_code']).agg(req_sum)).fillna(0))
+#    effective_cash['MarketValue']=0
+#    effective_cash['FundValue']=total_cash[['FundValue']].values
+#    effective_cash['EffExposure']=np.where(effective_cash[['EffExposure']].values==0,total_cash[['EffExposure']].values, effective_cash[['EffExposure']].values)
+#    
+#    
+#    cash_dat=res_ind(effective_cash,'Effective cash').reset_index()
+#    cash_dat['Trade_date']=startDate
+#    cash_dat=(cash_dat[['Trade_date', 'Port_code','AssetType1','AssetType5','AssetType3', 'Quantity','EffExposure','MarketValue','FundValue','Close_price']])
+#    new_dat=((pd.concat([dfprt_1.reset_index(),cash_dat],axis=0, sort=True).reset_index().drop('index',axis=1)).sort_values(['Port_code','AssetType1','AssetType5','AssetType3'])).set_index(['Trade_date','Port_code','AssetType1','AssetType5','AssetType3'])
+#    new_dat['EffWgt']=new_dat[['EffExposure']].values/new_dat[['FundValue']].values
+#    new_dat['MktWgt']=new_dat[['MarketValue']].values/new_dat[['FundValue']].values
+#    n_1 = new_dat.reset_index()
+#    n_1=n_1.groupby(['Port_code','AssetType1']).agg({'EffExposure':'sum','EffWgt':'sum'})
+#    n_1=n_1[~(n_1.index.get_level_values('AssetType1').isin(['Dividend Exposure']))]
+#    n_2=n_1.reset_index()
+#    fnd_value=(total_cash[['FundValue']].reset_index().set_index('Port_code')[['FundValue']]).reset_index()
+#    fnd_value['AssetType1']='Fund Value'
+#    fnd_value['EffWgt']=1
+#    fnd_value.columns= ['Port_code','EffExposure','AssetType1','EffWgt']  
+#    fnd_value=fnd_value[n_2.columns]
+#    n_3=n_2.append(fnd_value)
+#    n_3=n_3.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffExposure')
+#    n_4=n_2.reset_index().pivot(index='Port_code', columns='AssetType1',values='EffWgt')
+#    
+#    n_3.columns=[sym.replace(" ", "")+'_R'  for sym in n_3.columns]
+#    n_4.columns=[sym.replace(" ", "")+'_p'  for sym in n_4.columns]
+#    
+#    n_comb=n_3.merge(n_4, left_index=True, right_index=True)   
+#    n_comb[['B.FuturesExposure_R']]=(n_comb[['B.FuturesExposure_R']]).fillna(0)   
+#    n_comb[['B.FuturesExposure_p']]=(n_comb[['B.FuturesExposure_p']]).fillna(0)   
+#    lst = [new_dat, n_comb]
+#    return lst
 
 # Pre flow
-new_dat_preflow=fx_dta(dfprt_x=dfprt_preflow)
+new_dat_preflow=fx_dta(dfprt_preflow,startDate)
 new_dat_pf=new_dat_preflow[0]
 n_comb_pf=new_dat_preflow[1]
 
@@ -376,7 +379,7 @@ time_elapsed = datetime.now() - start_time
 print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
 
 # Post flow
-new_dat_x=fx_dta(dfprt_x=dfprt)
+new_dat_x=fx_dta(dfprt, startDate)
 new_dat=new_dat_x[0]
 n_comb=new_dat_x[1]
         
