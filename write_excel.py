@@ -269,7 +269,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
     hdr= ['FundValue', 'EquityExposure', 'Totalcash', 'FuturesExposure','Effectivecash', 
           'Cash Flow','Totalcash', 'Effectivecash',
-          'Tgt_EffCash', 'No. Futures / Price', 'FutureCode','Trade','FundValue', 'EquityExposure', 'Totalcash',
+          'Tgt_EffCash', 'TradeValue','No. Futures / Price', 'FutureCode','Trade','FundValue', 'EquityExposure', 'Totalcash',
           'FuturesExposure', 'Effectivecash', 'Check cash', 'TradeSignal','TradeComment','Checked by']        
     lst_fund= sf(False)
     
@@ -279,7 +279,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     n_comb_dta=n_comb_eff_1[['FundValue_R_pf', 'EquityExposure_R_pf', 'Totalcash_R_pf', 'FuturesExposure_R_pf','Effectivecash_R_pf',
                             'Inflow', 'Totalcash_R', 'Effectivecash_R',
                        #     'FundValue_R', 'EquityExposure_R', 'Totalcash_R', 'FuturesExposure_R','Effectivecash_R',
-                            'Tgt_EffCash1', 'No. Futures', 'AssetType3','Trade',
+                            'Tgt_EffCash1', 'FuturesTraded_R', 'No. Futures', 'AssetType3','Trade',
                             'FundValue_TR', 'EquityExposure_TR', 'Totalcash_TR','FuturesExposure_TR', 'Effectivecash_TR', 'Check cash','Trade_YN','Comment','Checked']]
     
     n_comb_dta.to_excel(writer, sheet_name='Sheet1', startrow=st_row, header=  hdr,index_label = ['Portfolio Code',' '])
@@ -333,11 +333,11 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     worksheet.merge_range(str('C'+str(st_row)+':'+'G'+str(st_row)), 'Pre Trade', merge_format1)
     worksheet.merge_range(str('H'+str(st_row)+':'+'J'+str(st_row)), 'Flow', merge_format5)
     worksheet.write_string(str('K'+str(st_row)), 'Target', merge_format6)
-    worksheet.merge_range(str('L'+str(st_row)+':'+'N'+str(st_row)), 'Trade', merge_format2)
-    worksheet.merge_range(str('O'+str(st_row)+':'+'T'+str(st_row)), 'Post Trade', merge_format3)
-    worksheet.merge_range(str('U'+str(st_row)+':'+'W'+str(st_row)),  'Sign-off', merge_format2)
+    worksheet.merge_range(str('L'+str(st_row)+':'+'O'+str(st_row)), 'Trade', merge_format2)
+    worksheet.merge_range(str('P'+str(st_row)+':'+'U'+str(st_row)), 'Post Trade', merge_format3)
+    worksheet.merge_range(str('V'+str(st_row)+':'+'X'+str(st_row)),  'Sign-off', merge_format2)
     
-    worksheet.write(7, 11, "No. Futures / Price", cell_format2_2)
+    worksheet.write(7, 12, "No. Futures / Price", cell_format2_2)
     
     worksheet.set_column('A:A', 13)
     worksheet.set_column('B:B', 4)
@@ -351,20 +351,22 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     worksheet.set_column('I:I', 12)        
     worksheet.set_column('J:J', 11)
     
+    worksheet.set_column('K:K', 11)
+    
+    worksheet.set_column('L:L',11)
+    worksheet.set_column('M:M',11)
+    worksheet.set_column('N:N',11)
+    worksheet.set_column('O:O',11)
+    worksheet.set_column('P:P',15)
+    worksheet.set_column('Q:Q',14)
+    worksheet.set_column('R:R',12)
+    worksheet.set_column('S:S',13)
+    worksheet.set_column('T:T',14)
+    worksheet.set_column('U:U',11)
+    worksheet.set_column('V:V',10)
+    worksheet.set_column('W:W',13)
+    worksheet.set_column('X:X',11)
 
-    worksheet.set_column('K:K',10)
-    worksheet.set_column('L:L', 11)
-    worksheet.set_column('M:M', 11)
-    worksheet.set_column('N:N', 11)        
-    worksheet.set_column('O:O', 15)        
-    worksheet.set_column('P:P', 14)        
-    worksheet.set_column('Q:Q', 12)
-    worksheet.set_column('R:R', 13)
-    worksheet.set_column('S:S', 14)
-    worksheet.set_column('T:T', 11)        
-    worksheet.set_column('U:U', 10)        
-    worksheet.set_column('V:V', 13)        
-    worksheet.set_column('W:W', 11)
 #    worksheet.set_column('F:F', 15, None, {'level': 1})
     # Get the xlsxwriter workbook and worksheet objects.
     #workbook  = writer.book
@@ -398,29 +400,29 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
        worksheet.set_row(j+1, 18, format2)
     
       
-    worksheet.conditional_format(str('L'+str(st_row+2)+':'+'L100'), {'type': 'cell',
+    worksheet.conditional_format(str('M'+str(st_row+2)+':'+'M100'), {'type': 'cell',
                                                                      'criteria': 'between',
                                                                      'minimum': 1,
                                                                      'maximum': 9999,
                                                                      'format': format3})
-    worksheet.conditional_format(str('L'+str(st_row+2)+':'+'L100'), {'type': 'cell',
+    worksheet.conditional_format(str('M'+str(st_row+2)+':'+'M100'), {'type': 'cell',
                                                                      'criteria': '>',
                                                                      'value': 10000,
                                                                      'format': format1})
-    worksheet.conditional_format(str('L'+str(st_row+2)+':'+'L100'), {'type': 'cell',
+    worksheet.conditional_format(str('M'+str(st_row+2)+':'+'M100'), {'type': 'cell',
                                                                      'criteria': '=',
                                                                      'value': 0,
                                                                      'format': format4})
-    worksheet.conditional_format(str('L'+str(st_row+2)+':'+'L100'), {'type': 'cell',
+    worksheet.conditional_format(str('M'+str(st_row+2)+':'+'M100'), {'type': 'cell',
                                                                      'criteria': '<',
                                                                      'value': 0,
                                                                      'format': format3})
   
-    worksheet.conditional_format(str('N'+str(st_row+2)+':'+'N100'), {'type': 'cell',
+    worksheet.conditional_format(str('O'+str(st_row+2)+':'+'O100'), {'type': 'cell',
                                                                      'criteria': '=',
                                                                      'value': '"Buy"',
                                                                      'format': format5})
-    worksheet.conditional_format(str('N'+str(st_row+2)+':'+'N100'), {'type': 'cell',
+    worksheet.conditional_format(str('O'+str(st_row+2)+':'+'O100'), {'type': 'cell',
                                                                      'criteria': '=',
                                                                      'value': '"Sell"',
                                                                      'format': format6})
@@ -435,19 +437,19 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     
         if n_comb_eff_1['Totalcash_R'].iloc[i] < n_comb_eff_1['Min_TotalCash'].iloc[i]:
             worksheet.write(i+st_it, 8, n_comb_dta['Totalcash_R'].iloc[i], format7)
-            worksheet.write(i+st_it, 16, n_comb_dta['Totalcash_TR'].iloc[i], format7)
-            worksheet.write(i+st_it, 19, n_comb_dta['Check cash'].iloc[i], format6)
+            worksheet.write(i+st_it, 17, n_comb_dta['Totalcash_TR'].iloc[i], format7)
+            worksheet.write(i+st_it, 20, n_comb_dta['Check cash'].iloc[i], format6)
         elif n_comb_eff_1['Totalcash_R'].iloc[i] > n_comb_eff_1['Max_TotalCash'].iloc[i]:
             worksheet.write(i+st_it, 8, n_comb_dta['Totalcash_R'].iloc[i], format7)
-            worksheet.write(i+st_it, 16, n_comb_dta['Totalcash_TR'].iloc[i], format7)
-            worksheet.write(i+st_it, 19, n_comb_dta['Check cash'].iloc[i], format6)
+            worksheet.write(i+st_it, 17, n_comb_dta['Totalcash_TR'].iloc[i], format7)
+            worksheet.write(i+st_it, 20, n_comb_dta['Check cash'].iloc[i], format6)
         
         if n_comb_eff_1['Effectivecash_TR'].iloc[i] < n_comb_eff_1['Min_EffCash'].iloc[i]:
-            worksheet.write(i+st_it, 18, n_comb_dta['Effectivecash_TR'].iloc[i], format7)
+            worksheet.write(i+st_it, 19, n_comb_dta['Effectivecash_TR'].iloc[i], format7)
         elif n_comb_eff_1['Effectivecash_TR'].iloc[i] > n_comb_eff_1['Max_EffCash'].iloc[i]:
-            worksheet.write(i+st_it, 18, n_comb_dta['Effectivecash_TR'].iloc[i], format7)
+            worksheet.write(i+st_it, 19, n_comb_dta['Effectivecash_TR'].iloc[i], format7)
         else:
-            worksheet.write(i+st_it, 18, n_comb_dta['Effectivecash_TR'].iloc[i], format8)
+            worksheet.write(i+st_it, 19, n_comb_dta['Effectivecash_TR'].iloc[i], format8)
             
         if (n_comb_eff_1['Inflow'].iloc[i] < 0)&(~np.isnan(n_comb_eff_1['Inflow'].iloc[i])) :
             worksheet.write(i+st_it, 7, n_comb_dta['Inflow'].iloc[i], format7)
@@ -460,7 +462,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
        
            
     # Close the Pandas Excel writer and output the Excel file.
-    worksheet.autofilter(str('A'+str(st_it)+':'+'W100'))
+    worksheet.autofilter(str('A'+str(st_it)+':'+'X100'))
     worksheet.set_row(st_row, 29.25)
 #    worksheet.write(st_row, 1, 'Portfolio code', cell_format3)
 #    worksheet.protect()
@@ -470,9 +472,9 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     for j in range(1, len(n_comb_eff_1),2):
  #       print(n_comb_dta.index.values[j][0])
  #       if n_comb_eff_1['Check cash'].ix[j] == '':
-         worksheet.write(j+st_it, 20, '', cell_format3)
          worksheet.write(j+st_it, 21, '', cell_format3)
          worksheet.write(j+st_it, 22, '', cell_format3)
+         worksheet.write(j+st_it, 23, '', cell_format3)
       #   worksheet.write(str('A'+str(j+st_it)), n_comb_dta.index.values[j][0], format3)
      #   worksheet.write_formula(str('A'+str(j+st_it)), str('='+str('A'+str(j+st_it))))  
    #     else:
@@ -514,7 +516,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     dv.prompt = 'Please select from the list'
     dv.promptTitle = 'List Selection'
     mysheet.add_data_validation(dv)
-    dv.add(str('V'+str(st_it+1))+":"+str('V'+str(st_it+100)))
+    dv.add(str('W'+str(st_it+1))+":"+str('W'+str(st_it+100)))
     
     from openpyxl.worksheet.datavalidation import DataValidation
     dw = DataValidation(type="list", formula1='"0,1"', allow_blank=True)
@@ -523,7 +525,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     dw.prompt = 'Please select from the list'
     dw.promptTitle = 'List Selection'
     mysheet.add_data_validation(dw)
-    dw.add(str('U'+str(st_it+1))+":"+str('U'+str(st_it+100)))
+    dw.add(str('V'+str(st_it+1))+":"+str('V'+str(st_it+100)))
    
     
     
@@ -612,7 +614,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
     input_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\Futures Trades\\')
     
     root = Tk()
-    root.filename =  filedialog.askopenfilename(initialdir = input_folder,title = "choose your file",filetypes = (("jpeg files","*.xlsx"),("all files","*.*")))
+    root.filename =  filedialog.askopenfilename(initialdir = input_folder,title = "choose your file",filetypes = (("*.xlsx","*.xlsx"),("all files","*.*")))
   #  print (root.filename)
     root.withdraw()
     
@@ -642,7 +644,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
         print(sht_nam)
         checksheet = check.sheet_by_name('Sign-Off')
         if checksheet.nrows > 5:
-            value_app = checksheet.cell_value(5, 1) 
+            value_app = checksheet.cell_value(5,0) 
         else: 
             value_app =''
         
@@ -667,7 +669,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
   
     if run_load==1:
         
-        if (str(value_app)== "text:'Approved'"):
+        if (str(value_app) in ['Approved',"text:'Approved'"]):
         
             fund_xls_ex= fund_xls[fund_xls.TradeComment.isin(['Trade at spot','Trade at close'])]
             fund_xls_ex=fund_xls_ex.copy()
@@ -712,7 +714,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
 '******************************************************************************************************************************************************************************    
 """
         
-def tloader_fmt_equity(selct_on="x"):
+def tloader_fmt_equity(selct_on=1):
 
     import sys
     import pandas as pd
@@ -757,17 +759,17 @@ def tloader_fmt_equity(selct_on="x"):
     ls = []
     cols = range(0,20)
     for i in cols:
-        print(i)
+ #       print(i)
         ls.append(i)
     
-    if selct_on == 'x':
+    if selct_on == 1:
     
         root = Tk()
         root.filename =  filedialog.askopenfilename(initialdir = input_folder,title = "Choose your Equity file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
   #  print (root.filename)
         root.withdraw()
         
-    elif selct_on == 'y':
+    elif selct_on == 3:
         
         root = Tk()
         root.filename =  filedialog.askopenfilename(initialdir = input_folder,title = "Choose your Equity file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
@@ -778,14 +780,14 @@ def tloader_fmt_equity(selct_on="x"):
   #  print (root.filename)
         root.withdraw()
         
-    elif selct_on == 'w':
+    elif selct_on == 2:
         root = Tk()
-        root.filenameF =  filedialog.askopenfilename(initialdir = input_folder,title = "Choose your Futures file",filetypes = (("*.xlsm","*.xlsx"),("all files","*.*")))
+        root.filenameF =  filedialog.askopenfilename(initialdir = input_folder,title = "Choose your Futures file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
        
     else:
         msg1='No trades to be loaded!'
         
-    if selct_on in ['x','y']:
+    if selct_on in [1,3]:
         fund_xls = pd.read_csv(root.filename, skiprows =1, header = 0)
         #fund_xls['AlpCode']= (fund_xls['Asset ID'])[1:]
         fund_xls = fund_xls[fund_xls['Asset ID'] != 'ZAR']
@@ -812,7 +814,7 @@ def tloader_fmt_equity(selct_on="x"):
 #    fund_xls_ex['MP']='MP'
 #    fund_xls_ex['Blank']=''
 #    fund_xls_ex['TradeIns']='Trade at spot'
-    if selct_on in ['w','y']: 
+    if selct_on in [3,2]: 
         fut=pd.read_csv(root.filenameF, header = None) 
         fut[6]=''
     
@@ -820,7 +822,7 @@ def tloader_fmt_equity(selct_on="x"):
     with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
   #  with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
         #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
-        if selct_on in ['x','y']:
+        if selct_on in [1,3]:
             for i in range(0,len(fund_xls)):
         #    for i in range(0,10):
             #    print(i)
@@ -829,7 +831,7 @@ def tloader_fmt_equity(selct_on="x"):
                 sh=''.join(sf)
                 #sf=st[0]+','+st[1]+',',st[2]+','+st[4]+','+st[5]+','+st[6]+','+st[7]
                 fin.write(sh)
-            if selct_on=='y':     
+            if selct_on==3:     
                 for z in range(0,len(fut)):
                     ft=','.join(str(e) for e in fut.values.tolist()[z])
                     fin.write(ft)
@@ -837,7 +839,7 @@ def tloader_fmt_equity(selct_on="x"):
             else:
                 msg1="Equities loaded only"
                 
-        elif selct_on=='w':
+        elif selct_on==2:
                 for z in range(0,len(fut)):
                     ft=','.join(str(e) for e in fut.values.tolist()[z])
                     msg1="Futures loaded only"

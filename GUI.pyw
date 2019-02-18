@@ -101,14 +101,14 @@ class OMGCS_Index_gui:
         
         self.progress = ttk.Progressbar(window, orient="horizontal",
                                         length=200, mode="determinate")
-        self.progress.place(relx=0.5, rely=0.8, anchor="c")
+        self.progress.place(relx=0.5, rely=0.9, anchor="c")
         
         self.bytes = 0
         self.maxbytes = 0    
         
         self.close_btn = tkinter.Button(window, text = "Close", command = self.on_closing)# closing the 'window' when you click the button
         #self.close_btn.pack()
-        self.close_btn.place(relx=0.5, rely=0.9, anchor="c")
+        self.close_btn.place(relx=0.5, rely=0.95, anchor="c")
     
     def start(self):
         self.progress["value"] = 0
@@ -119,6 +119,7 @@ class OMGCS_Index_gui:
         self.load_fut()
         self.cashforBPM()
         self.load_trades()
+        
         
         
 # Create the futures report
@@ -173,10 +174,11 @@ class OMGCS_Index_gui:
     def batch_report(self):
         self.progress["value"] = 0
         #tkinter.messagebox.showinfo("Are flows & cash limits up to date: 1) Yes. 2) No.[Y/N]?:")
+        lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 14), width =50)
+        lbl.place(relx=0.5, rely=0.6, anchor="c")
         response = tkinter.messagebox.askquestion("Flows", "Are flows & cash limits up to date?")
        # print(response)
-        lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 14), width =50)
-        lbl.place(relx=0.5, rely=0.7, anchor="c")
+       
 # If user clicks 'Yes' then it returns 1 else it returns 0
         if response == 'yes':
           #   def read_bytes(self):
@@ -223,16 +225,41 @@ class OMGCS_Index_gui:
         '''simulate reading 500 bytes; update progress bar'''
         lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 10), width =50)
         lbl.place(relx=0.5, rely=0.6, anchor="c")
-
-        d=tloader_equity_or_fut("y")
+        def select_fx():
+            global d
+            lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 10), width =50)
+            lbl.place(relx=0.5, rely=0.82, anchor="c")
+       
+            selection = var.get()
+           # print(var)
+            print(selection)
+#            if selection==1:
+#                print("y")
+#            else:
+#                print("n")
+            d=tloader_equity_or_fut(selection)
+            print(d)
+            lbl=tkinter.Label(window, text = d,fg='green', font=("Helvetica", 10), bg='white')
+            lbl.place(relx=0.5, rely=0.82, anchor="c")
+             
+          #  return d 
+       
     #    tkinter.Label(window, text = b).pack()
         self.bytes += 500
         self.progress["value"] = self.bytes
         if self.bytes < self.maxbytes:
     # read more bytes after 100 ms
              self.after(100, self.tloader_equity_or_fut)
-        lbl=tkinter.Label(window, text = d,fg='green', font=("Helvetica", 10), bg='white')
-        lbl.place(relx=0.5, rely=0.6, anchor="c") 
+        var = tkinter.IntVar()
+        tkinter.Label(window, text = "Select trades to upload:").pack()
+        tkinter.Radiobutton(window, text = "Equities only", variable = var, value = 1,font=("Helvetica", 8)).pack()
+        tkinter.Radiobutton(window, text = "Futures only", variable = var, value = 2,font=("Helvetica", 8)).pack()
+        tkinter.Radiobutton(window, text = "Both Equities & Futures", variable = var, value = 3,font=("Helvetica", 8)).pack()
+        tkinter.Button(window, text = "OK", command = select_fx).pack()
+        #print(kgl)
+        
+     
+      
              
     def on_closing(self):
         import os
@@ -306,11 +333,36 @@ window.mainloop()
 #mainloop()
 
 
-
-
-
-
-
+#
+#import tkinter
+#from tkinter import *
+#
+#def function():
+#    selection = var.get()
+#
+#    if  selection == 1:
+#        # Default
+#        print(selection)
+#
+#    elif selection == 2:
+#        # User-defined
+#        print("No")
+#
+#    else:#selection==0
+#        #No choice
+#        print("What")
+#
+#    master.quit()
+#
+#master = Tk()
+#var = IntVar()
+#Label(master, text = "Select OCR language").grid(row=0, sticky=W)
+#Radiobutton(master, text = "default", variable = var, value = 1).grid(row=1, sticky=W)
+#Radiobutton(master, text = "user-defined", variable = var, value = 2).grid(row=2, sticky=W)
+#Button(master, text = "OK", command = function).grid(row=3, sticky=W)
+#mainloop()
+#
+#
 
 
 

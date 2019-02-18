@@ -450,12 +450,13 @@ def fut_calc_func(response):
         n_comb_pf.columns = [str(col) + '_pf' for col in n_comb_pf.columns]
         n_comb=pd.merge(n_comb, n_comb_pf.reset_index(), how='left',left_on=['Port_code'],right_on=['Port_code'])
         n_comb.loc[:,'FundValue_p_pf']=1
-       
+        n_comb.loc[:,'FuturesTraded_R']= (n_comb['Close_price'].values*n_comb['No. Futures'].values*10)
+        n_comb.loc[:,'FuturesTraded_p']=n_comb.loc[:,'FuturesTraded_R']/n_comb['FundValue_R'].values
         
         n_comb_eff_n=n_comb[['Port_code','FundValue_R_pf','EquityExposure_R_pf','Totalcash_R_pf','FuturesExposure_R_pf','Effectivecash_R_pf',
                            'FundValue_R','EquityExposure_R','Totalcash_R','FuturesExposure_R','Effectivecash_R','Tgt_EffCash1', 'No. Futures',
                            'AssetType3','Trade','FundValue_TR','EquityExposure_TR','Totalcash_TR','FuturesExposure_TR','Effectivecash_TR','Check cash','Min_EffCash',
-                           'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash','Tgt_EffCash','Inflow']]
+                           'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash','Tgt_EffCash','Inflow','FuturesTraded_R']]
         
         n_comb_eff=n_comb_eff_n.copy()
         n_comb_eff.loc[:,'ExposureType']=''
@@ -473,7 +474,7 @@ def fut_calc_func(response):
         n_comb_eff_n=n_comb[['Port_code','FundValue_p_pf','EquityExposure_p_pf','Totalcash_p_pf','FuturesExposure_p_pf','Effectivecash_p_pf',
                            'FundValue_p','EquityExposure_p','Totalcash_p','FuturesExposure_p','Effectivecash_p','Tgt_EffCash1', 'No. Futures',
                            'AssetType3','Trade','FundValue_T','EquityExposure_T','Totalcash_T','FuturesExposure_T','Effectivecash_T','Check cash','Min_EffCash',
-                           'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash','Tgt_EffCash','Inflow_p']]
+                           'Max_EffCash', 'Min_TotalCash', 'Max_TotalCash','Tgt_EffCash','Inflow_p','FuturesTraded_p']]
         n_comb_effp=n_comb_eff_n.copy()
         n_comb_effp.loc[:,'ExposureType']='(%)'
         
@@ -489,6 +490,7 @@ def fut_calc_func(response):
         n_comb_eff_1=n_comb_eff.sort_values(['Port_code','ExposureType'], ascending=True).set_index(['Port_code','ExposureType'])
         n_comb_eff_1['Trade_YN']=''   
         n_comb_eff_1['Comment']=''
+   #     n_comb_eff_1['Trade_p'=]
         # write excel report
         exl_rep(output_folder,dic_users,n_comb_eff_1,startDate,newest)
         #excel_fx(output_folder,dic_users,n_comb_eff_1,startDate)
