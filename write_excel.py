@@ -622,8 +622,8 @@ def tloader_fmt_futures(termi_nate_cnt=5):
     
     dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
    # dirtooutput_file= 'U:\\Production\\In\\'
-    dirtooutput_file= 'c:\\data\\'
-   #  dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
+   # dirtooutput_file= 'c:\\data\\'
+     dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
     
     #newest = max(glob.iglob(input_folder+'IndexFutRep_*.xlsx'), key=os.path.getmtime)
     
