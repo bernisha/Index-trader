@@ -623,7 +623,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
     dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
    # dirtooutput_file= 'U:\\Production\\In\\'
    # dirtooutput_file= 'c:\\data\\'
-     dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
+    dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
     
     #newest = max(glob.iglob(input_folder+'IndexFutRep_*.xlsx'), key=os.path.getmtime)
     
@@ -1753,21 +1753,21 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     
     if all([elem == 'No cash file generated' for elem in bsm]):
         os.remove(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
-        
+        msg=list([msg,str("Did you to enter a trade action?")])
     else:
-        msg="BPM Cash File created"
+        msg=["BPM Cash File created"]
         os.startfile(dirtooutput_file)  
    
     if all([elem == 'No futures file generated' for elem in fsm]):
         os.remove(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
-        
+        msg1=list([msg1,str("Did you to enter a trade action?")])
     else:
-        msg1="Futures file generated"
+        msg1=["Futures file generated"]
         #os.startfile(dirtooutput_file)  
    
     wb.Close(False)
     del xl
-    return str(msg+',\n' +msg1)
+    return '\n'.join(list(set(msg+msg1)))
     
 
 """    
