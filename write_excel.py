@@ -623,6 +623,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
     dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
    # dirtooutput_file= 'U:\\Production\\In\\'
     dirtooutput_file= 'c:\\data\\'
+   #  dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
     
     #newest = max(glob.iglob(input_folder+'IndexFutRep_*.xlsx'), key=os.path.getmtime)
     
@@ -751,6 +752,7 @@ def tloader_fmt_equity(selct_on=1):
     dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
     #dirtooutput_file= 'U:\\Production\\In\\'
     dirtooutput_file='c:\\data\\'
+    #dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
     
     #newest = max(glob.iglob(input_folder+'Trade*.xlsx'), key=os.path.getmtime)
     
@@ -787,65 +789,86 @@ def tloader_fmt_equity(selct_on=1):
     else:
         msg1='No trades to be loaded!'
         
-    if selct_on in [1,3]:
-        fund_xls = pd.read_csv(root.filename, skiprows =1, header = 0)
-        #fund_xls['AlpCode']= (fund_xls['Asset ID'])[1:]
-        fund_xls = fund_xls[fund_xls['Asset ID'] != 'ZAR']
-        fund_xls.loc[:,'AlpCode'] = fund_xls['Asset ID'].apply(lambda x : x[2:] if x.startswith("ZA") else x)   
-        fund_xls.loc[:,'TradeShort']= np.where(fund_xls['Trade Type'].values=='SELL', 'S', 
-                                                     np.where(fund_xls['Trade Type'].values=='BUY', 'B', ''))
-        fund_xls.loc[:,'BloomCode']= fund_xls['AlpCode'].apply(lambda x: "{}{}".format(x, ' SJ'))
+    run_job = 1
+    if selct_on == 3:
+        if ((root.filename == '') or (root.filenameF=='')):
+            msg1="No trades loaded, no files selected"
+            run_job = 0
+    elif selct_on == 1:
+        if root.filename== '':         
+            msg1="No trades loaded, no equity file selected"
+            run_job = 0
+    elif selct_on == 2:
+        if root.filenameF== '':         
+            msg1="No trades loaded, no futures file selected"
+            run_job = 0
+    else:
+        print("Run job")
         
-        user_dat=pd.read_excel(user_dta, usecols = ls)
-        user_dat=user_dat[["!ID","'BB_TICKER","MIN_AVG_VOLUME"]]
-        user_dat.columns=['ID','BB_Ticker','VOL']
-        fund_xls=pd.merge(fund_xls, user_dat, left_on=["BloomCode"], right_on=['BB_Ticker'], how="left")
-        fund_xls.loc[:,"TradeDays"]=np.abs(fund_xls["Trade"].values)/(0.2*fund_xls["VOL"].values)
-        fund_xls.loc[:,"TradeDays"]=(fund_xls["TradeDays"]).fillna(0)
-        fund_xls.loc[:,'TradeAction']= np.where(fund_xls['TradeDays'].values<0.3, 'Trade at close', 
-                                                     np.where(fund_xls['TradeDays'].values < 0.8,'Target close', 
-                                                              'Trade in line with market'))
+    if run_job==1:
+       
         
-        
-#     fund_xls_ex= fund_xls.loc[fund_xls['Trade Comment'] == 1]
-#    fund_xls_ex['Nom']=abs(fund_xls_ex['No. Futures'].values)
-#    fund_xls_ex=fund_xls_ex[['FutureCode', 'Portfolio Code', 'TradeShort', 'Nom']]
-#    fund_xls_ex['Instruction']='Rebalance Portfolio'
-#    fund_xls_ex['MP']='MP'
-#    fund_xls_ex['Blank']=''
-#    fund_xls_ex['TradeIns']='Trade at spot'
-    if selct_on in [3,2]: 
-        fut=pd.read_csv(root.filenameF, header = None) 
-        fut[6]=''
-    
-  
-    with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
-  #  with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
-        #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
         if selct_on in [1,3]:
-            for i in range(0,len(fund_xls)):
-        #    for i in range(0,10):
-            #    print(i)
-                st=fund_xls.values.tolist()[i]
-                sf=st[11]+','+st[1]+','+st[12]+','+str(int(abs(st[5])))+',''Rebalance Portfolio'+','+'MP'+',,'+st[18]+'\n'
-                sh=''.join(sf)
-                #sf=st[0]+','+st[1]+',',st[2]+','+st[4]+','+st[5]+','+st[6]+','+st[7]
-                fin.write(sh)
-            if selct_on==3:     
-                for z in range(0,len(fut)):
-                    ft=','.join(str(e) for e in fut.values.tolist()[z])
-                    fin.write(ft)
-                    msg1="Futures and equities loaded"
+            fund_xls = pd.read_csv(root.filename, skiprows =1, header = 0)
+            #fund_xls['AlpCode']= (fund_xls['Asset ID'])[1:]
+            fund_xls = fund_xls[fund_xls['Asset ID'] != 'ZAR']
+            fund_xls.loc[:,'AlpCode'] = fund_xls['Asset ID'].apply(lambda x : x[2:] if x.startswith("ZA") else x)   
+            fund_xls.loc[:,'TradeShort']= np.where(fund_xls['Trade Type'].values=='SELL', 'S', 
+                                                         np.where(fund_xls['Trade Type'].values=='BUY', 'B', ''))
+            fund_xls.loc[:,'BloomCode']= fund_xls['AlpCode'].apply(lambda x: "{}{}".format(x, ' SJ'))
+            
+            user_dat=pd.read_excel(user_dta, usecols = ls)
+            user_dat=user_dat[["!ID","'BB_TICKER","MIN_AVG_VOLUME"]]
+            user_dat.columns=['ID','BB_Ticker','VOL']
+            fund_xls=pd.merge(fund_xls, user_dat, left_on=["BloomCode"], right_on=['BB_Ticker'], how="left")
+            fund_xls.loc[:,"TradeDays"]=np.abs(fund_xls["Trade"].values)/(0.2*fund_xls["VOL"].values)
+            fund_xls.loc[:,"TradeDays"]=(fund_xls["TradeDays"]).fillna(0)
+            fund_xls.loc[:,'TradeAction']= np.where(fund_xls['TradeDays'].values<0.3, 'Trade at close', 
+                                                         np.where(fund_xls['TradeDays'].values < 0.8,'Target close', 
+                                                                  'Trade in line with market'))
+            
+            
+    #     fund_xls_ex= fund_xls.loc[fund_xls['Trade Comment'] == 1]
+    #    fund_xls_ex['Nom']=abs(fund_xls_ex['No. Futures'].values)
+    #    fund_xls_ex=fund_xls_ex[['FutureCode', 'Portfolio Code', 'TradeShort', 'Nom']]
+    #    fund_xls_ex['Instruction']='Rebalance Portfolio'
+    #    fund_xls_ex['MP']='MP'
+    #    fund_xls_ex['Blank']=''
+    #    fund_xls_ex['TradeIns']='Trade at spot'
+        if selct_on in [3,2]: 
+            fut=pd.read_csv(root.filenameF, header = None) 
+            fut[6]=''
+        
+      
+        with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
+      #  with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
+            #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
+            if selct_on in [1,3]:
+                for i in range(0,len(fund_xls)):
+            #    for i in range(0,10):
+                #    print(i)
+                    st=fund_xls.values.tolist()[i]
+                    sf=st[11]+','+st[1]+','+st[12]+','+str(int(abs(st[5])))+',''Rebalance Portfolio'+','+'MP'+',,'+st[18]+'\n'
+                    sh=''.join(sf)
+                    #sf=st[0]+','+st[1]+',',st[2]+','+st[4]+','+st[5]+','+st[6]+','+st[7]
+                    fin.write(sh)
+                if selct_on==3:     
+                    for z in range(0,len(fut)):
+                        ft=','.join(str(e) for e in fut.values.tolist()[z])
+                        fh=ft+'\n'
+                        fin.write(fh)
+                        msg1="Futures and equities loaded"
+                else:
+                    msg1="Equities loaded only"
+                    
+            elif selct_on==2:
+                    for z in range(0,len(fut)):
+                        ft=','.join(str(e) for e in fut.values.tolist()[z])
+                        fh=ft+'\n'
+                        msg1="Futures loaded only"
+                        fin.write(fh)
             else:
-                msg1="Equities loaded only"
-                
-        elif selct_on==2:
-                for z in range(0,len(fut)):
-                    ft=','.join(str(e) for e in fut.values.tolist()[z])
-                    msg1="Futures loaded only"
-                    fin.write(ft)
-        else:
-            msg1="No load"
+                msg1="No load"
     
     if msg1=="No load":
         os.remove(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))

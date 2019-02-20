@@ -36,9 +36,9 @@ import tkinter
 import tkinter.messagebox
 from tkinter import ttk
 
-import sys
-import tkinter
-import tkinter.messagebox
+#import sys
+#import tkinter
+#import tkinter.messagebox
     #import tkinter.ttk
     
 from PIL import ImageTk, Image
