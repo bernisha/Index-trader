@@ -55,9 +55,13 @@ class OMGCS_Index_gui:
 
  
     def __init__(self, window):
+        
         self.window = window
         window.geometry("500x500+500+300")
         window.title("OMCS IndexTrader")
+        
+        self.y_pos =0.785
+        self.x_pos =0.5
         
         self.label = tkinter.Label(window, text="Welcome to OMCS Indexation hub!",font=("Helvetica", 14))
         self.label.pack()
@@ -92,23 +96,25 @@ class OMGCS_Index_gui:
         
         self.text_btnO = tkinter.Button(window, text = "5. Drop Post-Opt Files to Folder!", command = self.cashforBPM) # create a button to call a function called 'say_hi'
         self.text_btnO.pack()
-
+        self.flag= True
+        
+        #if self.flag:
         self.text_btnP = tkinter.Button(window, text = "6. Load Batch trades into Decalog!", command = self.load_trades) # create a button to call a function called 'say_hi'
         self.text_btnP.pack()
 
-        
+       # self.flag=False
         
         
         self.progress = ttk.Progressbar(window, orient="horizontal",
                                         length=200, mode="determinate")
-        self.progress.place(relx=0.5, rely=0.9, anchor="c")
+        self.progress.place(relx=0.5, rely=0.90, anchor="c")
         
         self.bytes = 0
         self.maxbytes = 0    
         
         self.close_btn = tkinter.Button(window, text = "Close", command = self.on_closing)# closing the 'window' when you click the button
         #self.close_btn.pack()
-        self.close_btn.place(relx=0.5, rely=0.95, anchor="c")
+        self.close_btn.place(relx=0.5, rely=0.96, anchor="c")
     
     def start(self):
         self.progress["value"] = 0
@@ -129,7 +135,7 @@ class OMGCS_Index_gui:
         response = tkinter.messagebox.askquestion("Flows", "Are flows & cash limits up to date?")
       #  print(response)
         lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 14), width =50)
-        lbl.place(relx=0.5, rely=0.6, anchor="c")
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
 # If user clicks 'Yes' then it returns 1 else it returns 0
         if response == 'yes':
           #   def read_bytes(self):
@@ -140,12 +146,12 @@ class OMGCS_Index_gui:
             # read more bytes after 100 ms
                  self.after(100, self.fut_report)
 
-              lbl=tkinter.Label(window, text = "Futures report generated!", fg='green', font=("Helvetica", 14), bg='white')
-              lbl.place(relx=0.5, rely=0.6, anchor="c")
+              lbl=tkinter.Label(window, text = "Futures report generated!", fg='green', font=("Helvetica", 12), bg='white')
+              lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         
         else:
-            lbl=tkinter.Label(window, text = "Please Update Flows", fg='red', font=("Helvetica", 14), bg='white')
-            lbl.place(relx=0.5, rely=0.6, anchor="c")
+            lbl=tkinter.Label(window, text = "Please Update Flows", fg='red', font=("Helvetica", 12), bg='white')
+            lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         if response=='yes':
             fut_calc(response)
             #print("yes")
@@ -157,8 +163,8 @@ class OMGCS_Index_gui:
         '''simulate reading 500 bytes; update progress bar'''
         self.bytes += 500
         self.progress["value"] = self.bytes
-        lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 14), width =50)
-        lbl.place(relx=0.5, rely=0.6, anchor="c")
+        lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 12), width =50)
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         g=load_fut()
         
         if self.bytes < self.maxbytes:
@@ -166,7 +172,7 @@ class OMGCS_Index_gui:
         
              self.after(100, self.load_fut)
         lbl=tkinter.Label(window, text = g, fg='green', font=("Helvetica", 10), bg='white')
-        lbl.place(relx=0.5, rely=0.6, anchor="c")
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         #print("yes")
         
         
@@ -174,8 +180,8 @@ class OMGCS_Index_gui:
     def batch_report(self):
         self.progress["value"] = 0
         #tkinter.messagebox.showinfo("Are flows & cash limits up to date: 1) Yes. 2) No.[Y/N]?:")
-        lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 14), width =50)
-        lbl.place(relx=0.5, rely=0.6, anchor="c")
+        lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 12), width =50)
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         response = tkinter.messagebox.askquestion("Flows", "Are flows & cash limits up to date?")
        # print(response)
        
@@ -189,11 +195,11 @@ class OMGCS_Index_gui:
             # read more bytes after 100 ms
                  self.after(100, self.batch_report)
 
-              lbl=tkinter.Label(window, text = "Batch cash calc generated!" ,fg='green', font=("Helvetica", 14), bg='white')
-              lbl.place(relx=0.5, rely=0.6, anchor="c")
+              lbl=tkinter.Label(window, text = "Batch cash calc generated!" ,fg='green', font=("Helvetica", 12), bg='white')
+              lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         else:
-            lbl=tkinter.Label(window, text = "Please Update Flows",fg='red', font=("Helvetica", 14), bg='white')
-            lbl.place(relx=0.5, rely=0.6, anchor="c")
+            lbl=tkinter.Label(window, text = "Please Update Flows",fg='red', font=("Helvetica", 12), bg='white')
+            lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         if response=='yes':
             # runfile('C:/IndexTrader/code/pre_flow_calc.py', wdir='C:/IndexTrader/code')               
             batch_calc_fx(response)
@@ -207,7 +213,7 @@ class OMGCS_Index_gui:
         self.progress["value"] = 0
         '''simulate reading 500 bytes; update progress bar'''
         lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 10), width =50)
-        lbl.place(relx=0.5, rely=0.6, anchor="c")
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
 
         b=cash_bpm()
     #    tkinter.Label(window, text = b).pack()
@@ -217,18 +223,19 @@ class OMGCS_Index_gui:
     # read more bytes after 100 ms
              self.after(100, self.cash_bpm)
         lbl=tkinter.Label(window, text = b,fg='green', font=("Helvetica", 10), bg='white')
-        lbl.place(relx=0.5, rely=0.6, anchor="c")     
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")     
 
 # Load trades
     def load_trades(self):
+       # self.flag= True
         self.progress["value"] = 0
         '''simulate reading 500 bytes; update progress bar'''
         lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 10), width =50)
-        lbl.place(relx=0.5, rely=0.6, anchor="c")
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
         def select_fx():
             global d
             lbl=tkinter.Label(window, text = " \n \n \n" ,fg='grey', font=("Helvetica", 10), width =50)
-            lbl.place(relx=0.5, rely=0.82, anchor="c")
+            lbl.place(relx=0.5, rely=self.y_pos, anchor="c")
        
             selection = var.get()
            # print(var)
@@ -240,7 +247,7 @@ class OMGCS_Index_gui:
             d=tloader_equity_or_fut(selection)
             print(d)
             lbl=tkinter.Label(window, text = d,fg='green', font=("Helvetica", 10), bg='white')
-            lbl.place(relx=0.5, rely=0.82, anchor="c")
+            lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
              
           #  return d 
        
@@ -249,17 +256,23 @@ class OMGCS_Index_gui:
         self.progress["value"] = self.bytes
         if self.bytes < self.maxbytes:
     # read more bytes after 100 ms
-             self.after(100, self.tloader_equity_or_fut)
+             self.after(100, self.tloader_equity_or_fut, True)
         var = tkinter.IntVar()
-        tkinter.Label(window, text = "Select trades to upload:").pack()
-        tkinter.Radiobutton(window, text = "Equities only", variable = var, value = 1,font=("Helvetica", 8)).pack()
-        tkinter.Radiobutton(window, text = "Futures only", variable = var, value = 2,font=("Helvetica", 8)).pack()
-        tkinter.Radiobutton(window, text = "Both Equities & Futures", variable = var, value = 3,font=("Helvetica", 8)).pack()
-        tkinter.Button(window, text = "OK", command = select_fx).pack()
+       # if self.flag:
+        tkinter.Label(window, text = "Select trades to upload:",fg='black', font=("Helvetica", 8)).place(relx=0.50, rely=0.52, anchor="c")
+        tkinter.Radiobutton(window, text = "Equities only", variable = var, value = 1,font=("Helvetica", 8)).place(relx=0.50, rely=0.56, anchor="c")
+        tkinter.Radiobutton(window, text = "Futures only", variable = var, value = 2,font=("Helvetica", 8)).place(relx=0.50, rely=0.60, anchor="c")
+        tkinter.Radiobutton(window, text = "Both Equities & Futures", variable = var, value = 3,font=("Helvetica", 8)).place(relx=0.50, rely=0.64, anchor="c")
+        tkinter.Button(window, text = "OK", command = select_fx).place(relx=0.50, rely=0.68, anchor="c")
+       # self.flag=False
+      #  else:
+           # self.after(100, self.tloader_equity_or_fut, False)
+        print(self.flag)
+        #return self.flag
         #print(kgl)
         
      
-      
+  #  print("The flag" +str(self.flag))
              
     def on_closing(self):
         import os
