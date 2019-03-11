@@ -618,94 +618,96 @@ def tloader_fmt_futures(termi_nate_cnt=5):
   #  print (root.filename)
     root.withdraw()
     
-    
-    
-    dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
-   # dirtooutput_file= 'U:\\Production\\In\\'
-   # dirtooutput_file= 'c:\\data\\'
-    dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
-    
-    #newest = max(glob.iglob(input_folder+'IndexFutRep_*.xlsx'), key=os.path.getmtime)
-    
-    #check = xlrd.open_workbook(newest)
-    check = xlrd.open_workbook(root.filename)
-    sh='Sheet1'
-    sht_nam=check.sheet_names()    
-    
-    ls = []
-    cols = range(0,23)
-    for i in cols:
-        #    print(i)
-        ls.append(i)
-    
-    #fund_xls = pd.read_excel(newest, sheet_name = sh, skiprows =7, usecols = ls)
-    fund_xls = pd.read_excel(root.filename, sheet_name = sh, skiprows =7, usecols = ls)
-    
-    if 'Sign-Off' in sht_nam:
-        print(sht_nam)
-        checksheet = check.sheet_by_name('Sign-Off')
-        if checksheet.nrows > 5:
-            value_app = checksheet.cell_value(5,0) 
-        else: 
-            value_app =''
-        
+    if root.filename=='':
+        msg="No file selected!"
     else:
-     #   msg='Please sign off trade first!'
-        value_app=''
-       
     
-    checksheet2 = check.sheet_by_name('Sheet1')
-    
-    run_load=1
-    for j in range(9,(len(fund_xls)+9),2):
-        value = checksheet2.cell(j, 20)
-        if str(value) == 'number:1.0':
-            value_cell = checksheet2.cell(j, 21)
-            if str(value_cell)[0:11]=="text:'Trade":
-              run_load_x=1    
+        dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
+       # dirtooutput_file= 'U:\\Production\\In\\'
+       # dirtooutput_file= 'c:\\data\\'
+        dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
+        
+        #newest = max(glob.iglob(input_folder+'IndexFutRep_*.xlsx'), key=os.path.getmtime)
+        
+        #check = xlrd.open_workbook(newest)
+        check = xlrd.open_workbook(root.filename)
+        sh='Sheet1'
+        sht_nam=check.sheet_names()    
+        
+        ls = []
+        cols = range(0,23)
+        for i in cols:
+            #    print(i)
+            ls.append(i)
+        
+        #fund_xls = pd.read_excel(newest, sheet_name = sh, skiprows =7, usecols = ls)
+        fund_xls = pd.read_excel(root.filename, sheet_name = sh, skiprows =7, usecols = ls)
+        
+        if 'Sign-Off' in sht_nam:
+            print(sht_nam)
+            checksheet = check.sheet_by_name('Sign-Off')
+            if checksheet.nrows > 5:
+                value_app = checksheet.cell_value(5,0) 
+            else: 
+                value_app =''
+            
+        else:
+         #   msg='Please sign off trade first!'
+            value_app=''
+           
+        
+        checksheet2 = check.sheet_by_name('Sheet1')
+        
+        run_load=1
+        for j in range(9,(len(fund_xls)+9),2):
+            value = checksheet2.cell(j, 20)
+            if str(value) == 'number:1.0':
+                value_cell = checksheet2.cell(j, 21)
+                if str(value_cell)[0:11]=="text:'Trade":
+                  run_load_x=1    
+                else:
+                  run_load=0
+                #  print("Please enter a trade ctloader_fmt_futuresomment before loading")
+             #        break
+      
+        if run_load==1:
+            
+            if (str(value_app) in ['Approved',"text:'Approved'"]):
+            
+                fund_xls_ex= fund_xls[fund_xls.TradeComment.isin(['Trade at spot','Trade at close'])]
+                fund_xls_ex=fund_xls_ex.copy()
+                fund_xls_ex['TradeShort']= np.where(fund_xls_ex['Trade'].values=='Sell', 'SOC', 
+                                                             np.where(fund_xls_ex['Trade'].values=='Buy', 'BOC', ''))
+                fund_xls_ex['Nom']=abs(fund_xls_ex['No. Futures / Price'].values)
+                fund_xls_x=fund_xls_ex[['FutureCode', 'Portfolio Code', 'TradeShort', 'Nom']]
+                fund_xls_x=fund_xls_x.copy()
+                fund_xls_x['Instruction']='Rebalance Portfolio'
+                fund_xls_x['MP']='MP'
+                fund_xls_x['Blank']=''
+                fund_xls_x['TradeIns']=  fund_xls_ex['TradeComment']
+                
+                
+                with open(str(dirtooutput_file+"FuturesTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
+              #  with open(str('c:\\data\\'+"FuturesTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
+                    #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
+                    for i in range(0,len(fund_xls_ex)):
+                       # print(i)
+                        st=fund_xls_x.values.tolist()[i]
+                        sf=st[0]+','+st[1]+',',st[2]+','+str(int(st[3]))+','+st[4]+','+st[5]+','+st[6]+','+st[7]+'\n'
+                        sh=''.join(sf)
+                        #sf=st[0]+','+st[1]+',',st[2]+','+st[4]+','+st[5]+','+st[6]+','+st[7]
+                        fin.write(sh)
+                    # Get sheet names
+                print("Trades loaded into Decalog!!")
+                msg="Trades loaded into Decalog!!"
+                    
             else:
-              run_load=0
-            #  print("Please enter a trade ctloader_fmt_futuresomment before loading")
-         #        break
-  
-    if run_load==1:
-        
-        if (str(value_app) in ['Approved',"text:'Approved'"]):
-        
-            fund_xls_ex= fund_xls[fund_xls.TradeComment.isin(['Trade at spot','Trade at close'])]
-            fund_xls_ex=fund_xls_ex.copy()
-            fund_xls_ex['TradeShort']= np.where(fund_xls_ex['Trade'].values=='Sell', 'SOC', 
-                                                         np.where(fund_xls_ex['Trade'].values=='Buy', 'BOC', ''))
-            fund_xls_ex['Nom']=abs(fund_xls_ex['No. Futures / Price'].values)
-            fund_xls_x=fund_xls_ex[['FutureCode', 'Portfolio Code', 'TradeShort', 'Nom']]
-            fund_xls_x=fund_xls_x.copy()
-            fund_xls_x['Instruction']='Rebalance Portfolio'
-            fund_xls_x['MP']='MP'
-            fund_xls_x['Blank']=''
-            fund_xls_x['TradeIns']=  fund_xls_ex['TradeComment']
-            
-            
-            with open(str(dirtooutput_file+"FuturesTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
-          #  with open(str('c:\\data\\'+"FuturesTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
-                #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
-                for i in range(0,len(fund_xls_ex)):
-                   # print(i)
-                    st=fund_xls_x.values.tolist()[i]
-                    sf=st[0]+','+st[1]+',',st[2]+','+str(int(st[3]))+','+st[4]+','+st[5]+','+st[6]+','+st[7]+'\n'
-                    sh=''.join(sf)
-                    #sf=st[0]+','+st[1]+',',st[2]+','+st[4]+','+st[5]+','+st[6]+','+st[7]
-                    fin.write(sh)
-                # Get sheet names
-            print("Trades loaded into Decalog!!")
-            msg="Trades loaded into Decalog!!"
+                print("Trade has not been approved, \nplease sign-off before loading, \n Trades are not loaded!!")
+                msg="Trade has not been approved, \nplease sign-off before loading, \nTrades are not loaded!!"
                 
         else:
-            print("Trade has not been approved, \nplease sign-off before loading, \n Trades are not loaded!!")
-            msg="Trade has not been approved, \nplease sign-off before loading, \nTrades are not loaded!!"
-            
-    else:
-        print("Please enter a trade comment before loading, Trades are not loaded!!")
-        msg="Please enter a trade comment before loading,\nTrades are not loaded!!"
+            print("Please enter a trade comment before loading, Trades are not loaded!!")
+            msg="Please enter a trade comment before loading,\nTrades are not loaded!!"
     return msg
 
 """
@@ -787,20 +789,20 @@ def tloader_fmt_equity(selct_on=1):
         root.filenameF =  filedialog.askopenfilename(initialdir = input_folder,title = "Choose your Futures file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
        
     else:
-        msg1='No trades to be loaded!'
+        msg1='No trades to \n be loaded!'
         
     run_job = 1
     if selct_on == 3:
         if ((root.filename == '') or (root.filenameF=='')):
-            msg1="No trades loaded, no files selected"
+            msg1="No trades loaded, \n no files selected"
             run_job = 0
     elif selct_on == 1:
         if root.filename== '':         
-            msg1="No trades loaded, no equity file selected"
+            msg1="No trades loaded, \n no equity file selected"
             run_job = 0
     elif selct_on == 2:
         if root.filenameF== '':         
-            msg1="No trades loaded, no futures file selected"
+            msg1="No trades loaded, \n no futures file selected"
             run_job = 0
     else:
         print("Run job")
@@ -857,7 +859,7 @@ def tloader_fmt_equity(selct_on=1):
                         ft=','.join(str(e) for e in fut.values.tolist()[z])
                         fh=ft+'\n'
                         fin.write(fh)
-                        msg1="Futures and equities loaded"
+                        msg1="Futures and \n equities loaded"
                 else:
                     msg1="Equities loaded only"
                     
@@ -1682,91 +1684,97 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     root.filename =  filedialog.askopenfilename(initialdir = output_folder,title = "choose your file",filetypes = (("jpeg files","*.xlsm"),("all files","*.*")))
     print (root.filename)
     root.withdraw()
- 
-    dirtooutput_file=str(output_folder+'\\CashFile\\')
-    dirtooutput_fileF=str(output_folder+'\\FuturesFile\\')
     
-    if not os.path.exists(dirtooutput_file):
-        os.makedirs(dirtooutput_file)
-    
-    if not os.path.exists(dirtooutput_fileF):
-        os.makedirs(dirtooutput_fileF)
-   
-    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
-    dic_users=user_dict.set_index(['username']).T.to_dict('list')
- 
-        
-    xl = win32com.client.Dispatch("Excel.Application")  # Set up excel
-    wb=xl.Workbooks.Open(Filename = root.filename)         # Open .xlsm file from step 2A
-    ws=wb.Sheets[0]
-    bsm=[]
-    fsm=[]
-    
-    with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\n') as fin:
-    
-        for j in range(3, len(lst_fund)*2+2, 2):
-      #      print(j)
-            fund = ws.Cells(7, j).value
-            bpm_cash=ws.Cells(80, j).value
-            bpm_futures=ws.Cells(73, j).value
-            fut_code=ws.Cells(16, j).value
-            trd_typ=ws.Cells(81, j).value
-            if trd_typ in ['Trade EQTY' ,'Trade EQTY+FUT']:
-              #  print(fut_code)
-                if fund in fnd_excp:
-                    sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'
-                    sh=''.join(sf)
-                else:
-                    sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'+fund+','+fut_code+','+str(bpm_futures)+'\n'
-                    sh=''.join(sf)
-                bsm=bsm+['Trade']    
-                fin.write(sh)
-            else:
-           #     print(fund)
-                msg="No cash file generated"
-                bsm=bsm+[msg]
-    
-    with open(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\n') as fut:
-        
-        for j in range(3, len(lst_fund)*2+2, 2):
-            fund = ws.Cells(7, j).value
-            fut_code=ws.Cells(16, j).value
-            fut_no=np.abs(ws.Cells(58, j).value)
-            fut_value=ws.Cells(58, j+1).value
-            trd_typ=ws.Cells(81, j).value
-            if trd_typ in ['Trade FUT' ,'Trade EQTY+FUT']:
-                if fund in fnd_excp:
-                    msg1='No futures file generated'
-                    fsm=fsm+[msg1]
-                else:
-                    sf=fut_code+','+fund+','+fut_value+','+str(fut_no)+',''Rebalance Portfolio,MP,,Trade at close\n'
-                    sh=''.join(sf)
-                    msg1="Futures file generated"
-                    fsm=fsm+[msg1]
-                    fut.write(sh)
-            else:
-               #print(fund)
-               msg1="No futures file generated"
-               fsm=fsm+[msg1]
-               #bsm=bsm+[msg]
-    
-    
-    if all([elem == 'No cash file generated' for elem in bsm]):
-        os.remove(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
-        msg=list([msg,str("Did you to enter a trade action?")])
+    if root.filename == '':
+        msg1 = ['No file']
+        msg=['selected']
     else:
-        msg=["BPM Cash File created"]
-        os.startfile(dirtooutput_file)  
-   
-    if all([elem == 'No futures file generated' for elem in fsm]):
-        os.remove(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
-        msg1=list([msg1,str("Did you to enter a trade action?")])
-    else:
-        msg1=["Futures file generated"]
-        #os.startfile(dirtooutput_file)  
-   
-    wb.Close(False)
-    del xl
+            
+     
+        dirtooutput_file=str(output_folder+'\\CashFile\\')
+        dirtooutput_fileF=str(output_folder+'\\FuturesFile\\')
+        
+        if not os.path.exists(dirtooutput_file):
+            os.makedirs(dirtooutput_file)
+        
+        if not os.path.exists(dirtooutput_fileF):
+            os.makedirs(dirtooutput_fileF)
+       
+        user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+        dic_users=user_dict.set_index(['username']).T.to_dict('list')
+     
+            
+        xl = win32com.client.Dispatch("Excel.Application")  # Set up excel
+        wb=xl.Workbooks.Open(Filename = root.filename)         # Open .xlsm file from step 2A
+        ws=wb.Sheets[0]
+        bsm=[]
+        fsm=[]
+        
+        with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\n') as fin:
+        
+            for j in range(3, len(lst_fund)*2+2, 2):
+          #      print(j)
+                fund = ws.Cells(7, j).value
+                bpm_cash=ws.Cells(80, j).value
+                bpm_futures=ws.Cells(73, j).value
+                fut_code=ws.Cells(16, j).value
+                trd_typ=ws.Cells(81, j).value
+                if trd_typ in ['Trade EQTY' ,'Trade EQTY+FUT']:
+                  #  print(fut_code)
+                    if fund in fnd_excp:
+                        sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'
+                        sh=''.join(sf)
+                    else:
+                        sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'+fund+','+fut_code+','+str(bpm_futures)+'\n'
+                        sh=''.join(sf)
+                    bsm=bsm+['Trade']    
+                    fin.write(sh)
+                else:
+               #     print(fund)
+                    msg="No cash file generated"
+                    bsm=bsm+[msg]
+        
+        with open(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\n') as fut:
+            
+            for j in range(3, len(lst_fund)*2+2, 2):
+                fund = ws.Cells(7, j).value
+                fut_code=ws.Cells(16, j).value
+                fut_no=np.abs(ws.Cells(58, j).value)
+                fut_value=ws.Cells(58, j+1).value
+                trd_typ=ws.Cells(81, j).value
+                if trd_typ in ['Trade FUT' ,'Trade EQTY+FUT']:
+                    if fund in fnd_excp:
+                        msg1='No futures file generated'
+                        fsm=fsm+[msg1]
+                    else:
+                        sf=fut_code+','+fund+','+fut_value+','+str(fut_no)+',''Rebalance Portfolio,MP,,Trade at close\n'
+                        sh=''.join(sf)
+                        msg1="Futures file generated"
+                        fsm=fsm+[msg1]
+                        fut.write(sh)
+                else:
+                   #print(fund)
+                   msg1="No futures file generated"
+                   fsm=fsm+[msg1]
+                   #bsm=bsm+[msg]
+        
+        
+        if all([elem == 'No cash file generated' for elem in bsm]):
+            os.remove(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
+            msg=list([msg,str("Did you to enter a trade action?")])
+        else:
+            msg=["BPM Cash File created"]
+            os.startfile(dirtooutput_file)  
+       
+        if all([elem == 'No futures file generated' for elem in fsm]):
+            os.remove(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
+            msg1=list([msg1,str("Did you to enter a trade action?")])
+        else:
+            msg1=["Futures file generated"]
+            #os.startfile(dirtooutput_file)  
+       
+        wb.Close(False)
+        del xl
     return '\n'.join(list(set(msg+msg1)))
     
 
@@ -1858,6 +1866,117 @@ def cash_flow_validity_fx(cash_flows_eff,newest,startDate,lst_fund, bf=0.005):
     return[csh_tab,csh_tab_agg]
     
 """    
+'******************************************************************************************************************************************************************************    
+'******************************************************************************************************************************************************************************    
+"""
+
+
+"""
+Created on Mon Feb 25 10:51:22 2019
+
+@author: tmfelang2
+"""
+"""
+' This function takes outputs from BPM (Batch optimisation report, cash file and trade list) and reformats to be compatible with
+  post-opt recon requirements (IT)
+  Drops re-formatted files into listener folder
+  Also archives files into Trades_Archive folder
+"""
+
+def BPM_output_loads():
+
+    import pandas as pd
+    
+    import os
+    from tkinter import filedialog
+    from tkinter import Tk
+    
+    import datetime as dt
+    from datetime import datetime, timedelta
+    
+    startDate = datetime.today()
+      
+    folder_yr = datetime.strftime(startDate, "%Y")
+    folder_mth = datetime.strftime(startDate, "%m")
+    folder_day = datetime.strftime(startDate, "%d")
+    
+    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+    dic_users=user_dict.set_index(['username']).T.to_dict('list')
+    
+    def selectfiles(path, choose="Choose your Cash file"):
+        root = Tk()
+        root.filename =  filedialog.askopenfilename(initialdir = path,title = choose)
+        #print (root.filename)
+        root.withdraw()
+        
+        print(choose[12:len(choose)])
+        return root.filename
+        
+    
+    #File directories
+    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+    batchopt_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
+    
+    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+    trdlist_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
+    
+    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+    cashfile_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\CashFile')
+    
+    cash_file=selectfiles(path=cashfile_import_folder)    
+    batchopt_file=selectfiles(choose="Choose your Batch Optimisation file",path=batchopt_import_folder) 
+    trd_file=selectfiles(choose="Choose your Trade file", path=batchopt_import_folder)
+   
+    
+    if ((cash_file=='')or(batchopt_file=='')or(trd_file=='')):
+        msg='Please select \n all 3 files. \n No files imported!'
+        print(msg)
+        
+    else:
+    
+        bpm_cashfile=pd.read_csv(cash_file)
+        tradelist=pd.read_csv(trd_file, header = 1)
+        batchoptimisationfile=pd.read_excel(batchopt_file, usecols='D:P', header = 1)
+        
+        
+        #Edit Batch Optimisation report
+        batchoptimisationfile = batchoptimisationfile.dropna(axis=0, subset=['Portfolio']) #if the portfolio column is empty then drop the row
+        batchoptimisationfile['Active Risk'] *= 100  #multiply active risk column by 100
+        batchoptimisationfile['Turnover'] *= 100  #multiply turover column by 100
+        
+        
+        
+        #Drop files in Listening Folder
+        #batchoptimisationfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Batch Optimisation\\Batch Optimisation.csv', index=False)
+        #tradelist.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Trades\\TradeList.csv', index=False)
+        #bpm_cashfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Cash Holdings\\BPM_Cash.csv', index=False)
+        
+        #archive the files imported
+        dirtoexport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\TRADES_ARCHIVE'
+        
+        batchopt_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\BatchOptimisation')
+        if not os.path.exists(batchopt_archive_folder):
+            os.makedirs(batchopt_archive_folder)
+        
+        
+        trdlist_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\TradeList')
+        if not os.path.exists(trdlist_archive_folder):
+            os.makedirs(trdlist_archive_folder)
+        
+        
+        cashfile_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\CashFile')
+        if not os.path.exists(cashfile_archive_folder):
+            os.makedirs(cashfile_archive_folder)
+        
+        
+        batchoptimisationfile.to_csv('\\'.join([batchopt_archive_folder,str('Batch_optimisation_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]))
+        tradelist.to_csv('\\'.join([trdlist_archive_folder,str('Tradelist_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]))
+        bpm_cashfile.to_csv('\\'.join([cashfile_archive_folder,str('Cashfile_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]))
+        msg='All files \n generated & saved'
+        
+    return msg
+
+"""
 '******************************************************************************************************************************************************************************    
 '******************************************************************************************************************************************************************************    
 """
