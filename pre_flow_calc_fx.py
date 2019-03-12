@@ -156,7 +156,7 @@ def pre_flow_calcFx(response):
         
         # Import Flows
         #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
-        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
+        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv')
         cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
         
         
