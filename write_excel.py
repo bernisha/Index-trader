@@ -622,10 +622,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
         msg="No file selected!"
     else:
     
-    #    dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
-        user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
-        dic_users=user_dict.set_index(['username']).T.to_dict('list')
-  
+        dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
        # dirtooutput_file= 'U:\\Production\\In\\'
        # dirtooutput_file= 'c:\\data\\'
         dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
@@ -754,10 +751,7 @@ def tloader_fmt_equity(selct_on=1):
     
     
     
- #   dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
-    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
-    dic_users=user_dict.set_index(['username']).T.to_dict('list')
-  
+    dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
     #dirtooutput_file= 'U:\\Production\\In\\'
     dirtooutput_file='c:\\data\\'
     #dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
@@ -893,7 +887,7 @@ def tloader_fmt_equity(selct_on=1):
 
 def select_fund(struc=True):
     import pandas as pd
-    get_fund_list = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
+    get_fund_list = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv')
     get_funds = (get_fund_list[(get_fund_list.Trade==1)])['Port_code'].tolist()
     if struc:
         get_funds = list(set(get_funds + ['CORPEQ'])) # Add corpeq to get the underlyng aset classifications    
@@ -1159,8 +1153,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     workbook  = writer.book
     
     workbook.filename= output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm'
-    #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
-    workbook.add_vba_project('//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/code/vbaProject.bin')
+    workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
     
     
     #writer.save()
