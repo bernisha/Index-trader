@@ -145,7 +145,7 @@ def fut_calc_func(response):
         
         # Import Flows
         #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
-        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv')
+        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv', thousands=',')
         cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
         
         # Import futures
@@ -235,12 +235,14 @@ def fut_calc_func(response):
         
              
         df.loc[:,'Benchmark_code']=df.Port_code.map(lambda x:dic_om_index[x][1])
+        df.loc[:,'TypeFund']=df.Port_code.map(lambda x:dic_om_index[x][2])
+      
               
         df['Trade_date']=startDate
-        df['AssetType1']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[0],axis=1)
-        df['AssetType2']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[1],axis=1)
-        df['AssetType3']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[2],axis=1)
-        df['AssetType4']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[3],axis=1)
+        df['AssetType1']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[0],axis=1)
+        df['AssetType2']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[1],axis=1)
+        df['AssetType3']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[2],axis=1)
+        df['AssetType4']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[3],axis=1)
         df['MarketValue']= np.where(df[['AssetType1']].isin(['Futures Exposure','Dividend Exposure']),0, df[['Market_price']])
         df['EffExposure']= df[['Market_price']]
         
@@ -490,6 +492,7 @@ def fut_calc_func(response):
         n_comb_eff_1=n_comb_eff.sort_values(['Port_code','ExposureType'], ascending=True).set_index(['Port_code','ExposureType'])
         n_comb_eff_1['Trade_YN']=''   
         n_comb_eff_1['Comment']=''
+        n_comb_eff_1 = n_comb_eff_1[~n_comb_eff_1.index.duplicated(keep='first')]
    #     n_comb_eff_1['Trade_p'=]
         # write excel report
         exl_rep(output_folder,dic_users,n_comb_eff_1,startDate,newest)
@@ -514,4 +517,3 @@ def fut_calc_func(response):
             #quit()
             
         
-            

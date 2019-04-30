@@ -195,7 +195,7 @@ class OMGCS_Index_gui:
         
     def callme(self, event):    
         path = '//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/required_inputs/'
-        dest_fold = 'c:/IndexTrader/required_inputs'
+        dest_fold = 'c:/IndexTrader/required_inputs/'
         if not os.path.exists(dest_fold):
             os.makedirs(dest_fold)
         

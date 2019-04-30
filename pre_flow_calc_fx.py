@@ -4,8 +4,9 @@ Created on Mon Mar 26 13:09:43 2018
 
 @author: blala
 """
-def pre_flow_calcFx(response):
+def pre_flow_calcFx(response,automatic=False):
     #import future
+
     import sys
     #sys.path.append('C:\Program Files (x86)\WinPython\python-3.6.5.amd64\lib\site-packages\IPython\extensions')
     #sys.path.append('C:\Program Files (x86)\WinPython\settings\.ipython')
@@ -29,12 +30,18 @@ def pre_flow_calcFx(response):
     from write_excel import select_fund as sf
     from write_excel import CashFlowFlag as cff
     from write_excel import trade_calc as t_c
+    from write_excel import trade_calc_automatic as t_c_a
     from write_excel import bulk_cash_excel_report as bcer
     from write_excel import cash_flow_validity_fx as cfvf
     from write_excel import assetClassB as assetClass
     from write_excel import res_indB as res_ind
     from write_excel import fx_dtaB as fx_dta
     
+    testing = True
+    if testing:
+        response= 'yes'
+        automatic = True
+        
     
     if response:
         start_time = datetime.now() 
@@ -156,7 +163,7 @@ def pre_flow_calcFx(response):
         
         # Import Flows
         #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
-        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv')
+        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
         cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
         
         
@@ -248,13 +255,14 @@ def pre_flow_calcFx(response):
         df=df[(df.Port_code.isin(dic_om_index.keys()))]
               
         df.loc[:,'Benchmark_code']=df.Port_code.map(lambda x:dic_om_index[x][1])
-              
+        df.loc[:,'TypeFund']=df.Port_code.map(lambda x:dic_om_index[x][2])
+        
         df['Trade_date']=startDate
-        df['AssetType1']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[0],axis=1)
-        df['AssetType2']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[1],axis=1)
-        df['AssetType3']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[2],axis=1)
-        df['AssetType4']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[3],axis=1)
-        df['AssetType5']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,cash_flows_eff)).split(",")[4],axis=1)
+        df['AssetType1']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[0],axis=1)
+        df['AssetType2']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[1],axis=1)
+        df['AssetType3']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[2],axis=1)
+        df['AssetType4']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[3],axis=1)
+        df['AssetType5']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[4],axis=1)
         df['MarketValue']= np.where(df[['AssetType1']].isin(['B. Futures Exposure','Dividend Exposure']),0, df[['Market_price']])
         df['EffExposure']= df[['Market_price']]
         
@@ -263,17 +271,17 @@ def pre_flow_calcFx(response):
                                                                df['Close_price'].values)
         # Futures insert
         if ~fut_flow.empty:
-            fut_flow = pd.merge(fut_flow[['Port_code','Sec_code']], (df[['Trade_date','AssetType1','AssetType5','AssetType3','Sec_code','Close_price']]).drop_duplicates(['Sec_code']), on=['Sec_code'], how='left').fillna(0)
+            fut_flow = pd.merge(fut_flow[['Port_code','Sec_code']], (df[['Trade_date','AssetType1','AssetType5','AssetType3','Sec_code','Sec_type','Close_price']]).drop_duplicates(['Sec_code']), on=['Sec_code'], how='left').fillna(0)
             fut_flow['Quantity']=0
             fut_flow['MarketValue']=0
             fut_flow['EffExposure']=0
             fut_flow['Trade_date']=startDate
-            fut_flow=(fut_flow[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Close_price','Quantity','MarketValue','EffExposure']]).copy()
+            fut_flow=(fut_flow[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Sec_type','Close_price','Quantity','MarketValue','EffExposure']]).copy()
             fut_flow=fut_flow[~(fut_flow.Sec_code=='NoFuture')]
            
         df=df[df.Port_code.isin(lst_fund)]
                                    
-        dfprt=(df[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Close_price','Quantity','MarketValue','EffExposure']]).copy()
+        dfprt=(df[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code', 'Sec_type','Close_price','Quantity','MarketValue','EffExposure']]).copy()
         
         # Remove cash and other non-equity asset classes for multi-asset class
         dfprt['MarketValue']=np.where((dfprt.Port_code.map(lambda x:dic_om_index[x][2])=='M')&(dfprt.AssetType1!='Equity Exposure'), 0, dfprt.MarketValue.values)
@@ -304,15 +312,17 @@ def pre_flow_calcFx(response):
             cash_flows_eff['AssetType4']='Cash flow'
             cash_flows_eff['AssetType5']='Cash flow'
             cash_flows_eff['Sec_code']='ZAR'
+            cash_flows_eff['Sec_type']='VAL'
             cash_flows_eff['Close_price']=1
             cash_flows_eff['Quantity']= cash_flows_eff[['Inflow']]
             cash_flows_eff['MarketValue']= cash_flows_eff[['Inflow']]
             cash_flows_eff['EffExposure']= cash_flows_eff[['Inflow']]
             
-            cash_flows=cash_flows_eff[['Trade_date', 'Port_code','AssetType1', 'AssetType5', 'AssetType3', 'Sec_code','Close_price', 'Quantity','MarketValue','EffExposure']]
+            cash_flows=cash_flows_eff[['Trade_date', 'Port_code','AssetType1', 'AssetType5', 'AssetType3', 'Sec_code','Sec_type','Close_price', 'Quantity','MarketValue','EffExposure']]
             
         
-        dfprt=dfprt_preflow.append(cash_flows, sort=True)  
+        dfprt1=dfprt_preflow.append(cash_flows, sort=True)  
+        dfprt=dfprt1.drop(['Sec_type'],axis=1)
         
         
         '''Generate cash calc
@@ -463,7 +473,22 @@ def pre_flow_calcFx(response):
         n_comb['fin_tot_cash']=n_comb.apply(lambda r: (t_c(r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
                                                                    r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p)[1]),axis=1)
         n_comb['InvType'] = np.where(n_comb.Inflow.values > 0, 'Investment', np.where(n_comb.Inflow.values < 0, 'Withdrawal Pay(t)', 'No cash flow'))        
-                
+        
+        
+        if automatic:
+            n_comb['trd_fut'] = n_comb.apply(lambda r: (t_c_a(r.Port_code,r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                                   r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[2]),axis=1).astype(float)
+ 
+            n_comb['tot_fut']=n_comb.apply(lambda r: (t_c_a(r.Port_code,r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                                   r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[3]),axis=1).astype(float)
+            n_comb['cash_bpm']=n_comb.apply(lambda r: (t_c_a(r.Port_code,r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                                   r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[4]),axis=1)
+            n_comb['eq_trade']=n_comb.apply(lambda r: (t_c_a(r.Port_code,r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
+                                                                   r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[5]),axis=1)
+            n_comb.to_hdf(str('c:/data/n_comb_'+str(startDate.date())+'.hdf'),'w', data_columns=True, format='table')
+            dfprt.to_hdf(str('c:/data/df_'+ str(startDate.date())+'.hdf'),'w', data_columns=True,format='table')
+            
+            
         
         bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp)
         print("\nReport Complete")
@@ -471,8 +496,7 @@ def pre_flow_calcFx(response):
     else:
         print("Exit")
         
-        
-        
+#pre_flow_calcFx("yes")
             
            
          
