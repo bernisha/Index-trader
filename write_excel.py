@@ -12,7 +12,7 @@ Created on Thu Mar 29 15:02:40 2018
 '******************************************************************************************************************************************************************************    
 """
 
-def assetClassF(Sec_type, ins_code,sec_nam,cash_flows_eff):
+def assetClassF(Sec_type, ins_code,sec_nam,Type_Fund, cash_flows_eff):
     
         #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
         ssf=['S']
@@ -38,7 +38,7 @@ def assetClassF(Sec_type, ins_code,sec_nam,cash_flows_eff):
             return "Equity Exposure,Equity,null,Equity Exposure"
         elif Sec_type=='EQ : RIGHTS':
             return "Equity Exposure,Equity Rights,null,Equity Exposure"
-        elif Sec_type=='EQ : FOREIGN':
+        elif Sec_type=='EQ : FOREIGN' and Type_Fund != 'M':
             return "Equity Exposure,Equity Foreign,null,Equity Exposure"
         elif ins_code[3:4] in(excp):
     #        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
@@ -59,7 +59,7 @@ def res_indF(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','As
     return dat
 
 
-def assetClassB(Sec_type, ins_code,sec_nam,cash_flows_eff):
+def assetClassB(Sec_type, ins_code,sec_nam, Type_Fund,cash_flows_eff):
 
     #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
     ssf=['S']
@@ -87,7 +87,7 @@ def assetClassB(Sec_type, ins_code,sec_nam,cash_flows_eff):
         return "Equity Exposure,Equity,null,Equity Exposure,EQUITY"
     elif Sec_type=='EQ : RIGHTS':
         return "Equity Exposure,Equity Rights,null,Equity Exposure,EQUITY"
-    elif Sec_type=='EQ : FOREIGN':
+    elif Sec_type=='EQ : FOREIGN' and Type_Fund !='M':
         return "Equity Exposure,Equity Foreign,null,Equity Exposure,EQUITY"
     elif ins_code[3:4] in(excp):
 #        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
@@ -622,7 +622,10 @@ def tloader_fmt_futures(termi_nate_cnt=5):
         msg="No file selected!"
     else:
     
-        dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
+    #    dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
+        user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+        dic_users=user_dict.set_index(['username']).T.to_dict('list')
+  
        # dirtooutput_file= 'U:\\Production\\In\\'
        # dirtooutput_file= 'c:\\data\\'
         dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
@@ -751,7 +754,10 @@ def tloader_fmt_equity(selct_on=1):
     
     
     
-    dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
+ #   dic_users={'blala':['BLL','blala'], 'test':['TST','test'], 'sbisho':['SB','sbisho'], 'tmfelang2':['TM','tmfelang'], 'abalfour':['AB','abalfour'], 'sparker2':['SP','sparker'], 'fsibiya':['FS','fsibiya']}
+    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+    dic_users=user_dict.set_index(['username']).T.to_dict('list')
+  
     #dirtooutput_file= 'U:\\Production\\In\\'
     dirtooutput_file='c:\\data\\'
     #dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
@@ -887,7 +893,7 @@ def tloader_fmt_equity(selct_on=1):
 
 def select_fund(struc=True):
     import pandas as pd
-    get_fund_list = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv')
+    get_fund_list = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
     get_funds = (get_fund_list[(get_fund_list.Trade==1)])['Port_code'].tolist()
     if struc:
         get_funds = list(set(get_funds + ['CORPEQ'])) # Add corpeq to get the underlyng aset classifications    
@@ -964,6 +970,7 @@ def CashFlowFlag(Eff_cash,Total_cash, mx_totcash, mn_totcash, mx_effcash, mn_eff
       
 def trade_calc(Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash, mn_effcash, ovrd_effcash, aeff_cash, atot_cash, fnd_val, fut_price, fut_exp, flw):
     import numpy as np
+    from write_excel import  chck_fut
 
 #    if Flag == 'Trade Equity + Futures':
 #        tgt_totcash = tgt_totcash
@@ -987,6 +994,7 @@ def trade_calc(Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash, mn_effcash
                                     np.where((aeff_cash>tgt_effcash), 'Buy', 
                                              np.where((aeff_cash<tgt_effcash), 'Sell', 'No Trade')),x_trd)
          no_fut = np.where(np.isin(x_trd2, ['Buy','Sell']), np.rint(((aeff_cash-tgt_effcash)*fnd_val)/(fut_price*10)), 0)
+         no_fut = chck_fut(no_fut, aeff_cash, mx_effcash, mn_effcash, tgt_effcash, fut_price, fnd_val)
          fut_exp1=((no_fut*10*fut_price)/fnd_val)+fut_exp
          if (atot_cash - fut_exp1) < 0:
               t_totcash = np.where(np.isnan(fut_exp), 0, fut_exp) + tgt_effcash
@@ -1003,10 +1011,81 @@ def trade_calc(Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash, mn_effcash
     else:
         t_totcash = atot_cash
         t_effcash = aeff_cash
-         
+  
+
     return [np.round(t_effcash,20),np.round(t_totcash,20)]    
 
+
+"""
+'******************************************************************************************************************************************************************************    
+'                                                                   Systematic rules to get trading targets (automatic)
+'******************************************************************************************************************************************************************************    
+"""
+    
+      
+def trade_calc_automatic(p,Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash, mn_effcash, ovrd_effcash, aeff_cash, atot_cash, fnd_val, fut_price, fut_exp, flw, curr_fut):
+    import numpy as np
+    from write_excel import  chck_fut
+
+#    if Flag == 'Trade Equity + Futures':
+#        tgt_totcash = tgt_totcash
+#        tgt_effcash = tgt_effcash
+    if Flag == 'Trade Equity + Futures (only flow)':
+        t_effcash=aeff_cash-flw
+        t_totcash=atot_cash-flw
+        if ((t_effcash>mx_effcash)or(t_effcash<mn_effcash)):
+            t_effcash=tgt_effcash
+        no_fut = np.where(np.isnan(np.rint(((t_totcash-t_effcash-fut_exp)*fnd_val)/fut_price/10)),0,np.rint(((t_totcash-t_effcash-fut_exp)*fnd_val)/fut_price/10))
+        
+    elif Flag == 'Trade Equity + Futures (midpoint)': 
+        t_effcash=aeff_cash-flw
+        t_totcash=tgt_totcash
+        if ((t_effcash>mx_effcash)or(t_effcash<mn_effcash)):
+            t_effcash=tgt_effcash
+        no_fut = np.where(np.isnan(np.rint(((t_totcash-t_effcash-fut_exp)*fnd_val)/fut_price/10)),0,np.rint(((t_totcash-t_effcash-fut_exp)*fnd_val)/fut_price/10))
+        
+    elif Flag == 'Trade Futures only':
+         x_trd = np.where(fut_code=="NoFuture", "No Trade",
+                                    np.where((aeff_cash>mx_effcash), 'Buy', 
+                                             np.where((aeff_cash<mn_effcash), 'Sell', 'No Trade')))
+         
+         x_trd2 = np.where((x_trd=="No Trade")&(~np.isnan(ovrd_effcash))&(not(fut_code=="NoFuture")),
+                                    np.where((aeff_cash>tgt_effcash), 'Buy', 
+                                             np.where((aeff_cash<tgt_effcash), 'Sell', 'No Trade')),x_trd)
+         no_fut = np.where(np.isin(x_trd2, ['Buy','Sell']), np.rint(((aeff_cash-tgt_effcash)*fnd_val)/(fut_price*10)), 0)
+         no_fut = chck_fut(no_fut, aeff_cash, mx_effcash, mn_effcash, tgt_effcash, fut_price, fnd_val)
+         fut_exp1=((no_fut*10*fut_price)/fnd_val)+fut_exp
+         if (atot_cash - fut_exp1) < 0:
+              t_totcash = np.where(np.isnan(fut_exp), 0, fut_exp) + tgt_effcash
+              t_effcash = tgt_effcash
+         else:
+             t_effcash = np.where((atot_cash - fut_exp1) < 0, (atot_cash - fut_exp), (atot_cash - fut_exp1))
+             t_totcash = atot_cash
+    
+    elif Flag == 'Trade Equity':
+        
+         t_totcash = np.where(np.isnan(fut_exp), 0, fut_exp) + tgt_effcash
+         t_effcash = tgt_effcash
+         no_fut = 0
+     
+    else:
+        t_totcash = atot_cash
+        t_effcash = aeff_cash
+        no_fut = 0
+    
+    cash_bpm= (t_effcash*fnd_val)-((t_effcash-aeff_cash)*fnd_val)-(no_fut*10* np.nan_to_num(fut_price))
+    eq_trd = cash_bpm - t_effcash*fnd_val
+#    print(str(p+"=("+str(t_effcash)+"*"+str(fnd_val)+")-(("+str(t_effcash)+"-"+str(aeff_cash)+")*"+str(fnd_val)+")+(("+str(no_fut)+"*10*"+str( np.nan_to_num(fut_price))+"))"))
+#    print(str(p+str(cash_bpm)+"eq trd: "+str(eq_trd)))
+    
+    tot_fut=np.nan_to_num(no_fut)+np.nan_to_num(curr_fut)
+    
+    return [np.round(t_effcash,20),np.round(t_totcash,20), no_fut, tot_fut, np.round(cash_bpm,8),np.round(eq_trd,8)]    
+  
 """    
+
+
+ 
 '******************************************************************************************************************************************************************************    
 '                                                                   Bulk cash calc excel report
 '******************************************************************************************************************************************************************************    
@@ -1153,7 +1232,8 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     workbook  = writer.book
     
     workbook.filename= output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm'
-    workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
+    #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
+    workbook.add_vba_project('//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/code/vbaProject.bin')
     
     
     #writer.save()
@@ -1603,7 +1683,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     del g
     del gg
     
-    worksheet.freeze_panes(19,2)
+    worksheet.freeze_panes(18,2)
     #worksheet.write_comment('C10', 'Enter cash flow info below', {'start_col': 5,'start_row': 7, 'x_scale': 1.2, 'y_scale': 0.25, 'visible': True ,'font_size': 11, 'bold':True ,'color': '#FFCC99'})
     
     #pandaswb = writer.book
@@ -1934,7 +2014,7 @@ def BPM_output_loads():
         
     else:
     
-        bpm_cashfile=pd.read_csv(cash_file)
+        bpm_cashfile=pd.read_csv(cash_file,index_col = None)
         tradelist=pd.read_csv(trd_file, header = 1)
         batchoptimisationfile=pd.read_excel(batchopt_file, usecols='D:P', header = 1)
         
@@ -1950,6 +2030,11 @@ def BPM_output_loads():
         #batchoptimisationfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Batch Optimisation\\Batch Optimisation.csv', index=False)
         #tradelist.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Trades\\TradeList.csv', index=False)
         #bpm_cashfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Cash Holdings\\BPM_Cash.csv', index=False)
+        
+        batchoptimisationfile.to_csv('\\\\ZACTNAPP54\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Batch Optimisation\\Batch Optimisation.csv', index=False)
+        tradelist.to_csv('\\\\ZACTNAPP54\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Trades\\TradeList.csv', index=False)
+        bpm_cashfile.to_csv('\\\\ZACTNAPP54\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Cash Holdings\\BPM_Cash.csv',header = 1, index=False)
+
         
         #archive the files imported
         dirtoexport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\TRADES_ARCHIVE'
