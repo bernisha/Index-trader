@@ -1,7 +1,7 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Mon Mar 26 13:09:43 2018
-
 @author: blala
 """
 def pre_flow_calcFx(response,automatic=False):
@@ -503,4 +503,3 @@ def pre_flow_calcFx(response,automatic=False):
                                               
             
         
-                

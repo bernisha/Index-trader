@@ -10,10 +10,8 @@ import numpy as np
 
 #trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, trade_type=1, fnd='ALSCPF')
 
-trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash'],
-         fnd=fund, trade_type=tdr_typ)
 
-def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp, min_hldg,fund, s0=buffer, niter=1000, step=0.1, ex_buf=0.00001):
+def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp, min_hldg,fund, s0, niter=1000, step=0.1, ex_buf=0.00001):
   # Initialize
   ## s stands for state
   ## f stands for function value
@@ -27,8 +25,7 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp, min_h
   s_list=[]
   fn_list=[]
   
-  f_b_ = func(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, s0, tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash'],
-             fnd=fund,trade_type=tdr_typ, excep=exp,min_hold=min_hldg) ## calculate the max active bet (max)
+  f_b_ = func(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, s0,fnd=fund,trade_type=tdr_typ, excep=exp,min_hold=min_hldg) ## calculate the max active bet (max)
   f_b = f_b_[0]
   f_c = f_b
   f_n = f_c
@@ -38,8 +35,7 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp, min_h
   for k in range(1, niter):
       tmp = (1-step)**k
       s_n = s_c + np.random.normal(0,0.000005,1)
-      f_n_ = func(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, s_n, tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash'],
-                 fnd=fund,trade_type=tdr_typ,excep=exp,min_hold=min_hldg)
+      f_n_ = func(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, s_n, fnd=fund,trade_type=tdr_typ,excep=exp,min_hold=min_hldg)
       f_n=f_n_[0]
       
       # update current state
@@ -56,6 +52,7 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp, min_h
         f_b = f_n
         i_b = k
         cnt = cnt+1
+        f_b_ = f_n_
         print("k is:", k, " cnt is:", cnt, "i_b is:", i_b)
       if ('i_b' in locals()):
           if ((k>10)and((k-cnt)>30)and((i_b-cnt)>10)):
@@ -67,8 +64,7 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp, min_h
           print("Can't find a solution")
           lst=abs(s0-np.array(fn_list))#np.where((buffer-np.array(fn_list))>0,buffer-np.array(fn_list),9)
           s_b = s_list[[i for i,x in enumerate(lst) if x == min(lst)][0]]
-          f_b_ = func(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, s_b, tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash'],
-                     fnd=fund,trade_type=tdr_typ,excep=exp,min_hold=min_hldg)
+          f_b_ = func(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, s_b, fnd=fund,trade_type=tdr_typ,excep=exp,min_hold=min_hldg)
           f_b = f_b_[0]
           i_b = 999
           break
@@ -78,7 +74,7 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp, min_h
   del [niter, s_b, f_b, i_b, tmp, cnt ]
     
   
-def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ,fund,exp,min_hldg,nt=100,stp=0.05,ex_bf=0.00001,mx_bet=0.0005):  
+def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ,fund,exp,min_hldg,nt=100,stp=0.05,ex_bf=0.000001,mx_bet=0.0005):  
     f_cnt=1  
     ooh=sim_annl_fx(trade_fx,n_comb,dfprt_comp_agg_R_B_q,min_trd_thrs,tdr_typ,exp,min_hldg,fund,s0=buffer,niter=nt,step=stp,ex_buf=ex_bf)
     while((f_cnt<7)&(ooh[3]==999)&(ooh[2]>mx_bet)):
@@ -94,13 +90,16 @@ def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ,fu
     trades['trades']=np.where(trades['Sec_code']=='ZAR', -(((trades['tradesX']*trades['U_Price'])).fillna(0).values).sum(),trades['tradesX'].values )
     trades['fnl_fnd_wgt']=trades['fnd_wgt'].values + ((trades['trades']*trades['U_Price'])/trades['tot_fnd_val']).fillna(0).values
     trades['fnl_act_bet']=((trades['fnl_fnd_wgt']-trades['bmk_wgt']).fillna(0)).values
-    
+    cnt=str('Trades:'+str(len(trades[trades.trades.abs()>0])))
     ooh.pop(6)
-    return [ooh+[trades]]
-exp=True
-z1=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ=1,fund='ALSCPF',exp=True,min_hldg=min_hold)
+    return [ooh+[cnt]+[trades]]
+
+z1=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer=0.0005,min_trd_thrs=0.0005,tdr_typ=1,fund='ALSCPF',exp=True,min_hldg=0.00001)
 z2=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ=2,fund='DSALPC',exp=False,min_hldg=min_hold)
-z3=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ=2,fund='UMSWMF',exp=True,min_hldg=min_hold)
+z3=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=2,fund='UMSMMF',exp=True,min_hldg=0.00001)
+z4=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=1,fund='OMCD01',exp=True,min_hldg=0.00001)
+z5=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=2,fund='UMSWMF',exp=True,min_hldg=0.00001)
+z6=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=1,fund='SASEMF',exp=True,min_hldg=0.00001)
 
 
 fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ=2,fund='SASEMF')

@@ -516,4 +516,3 @@ def fut_calc_func(response):
         print("Exit")
             #quit()
             
-        

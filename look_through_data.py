@@ -8,6 +8,7 @@ Created on Thu Mar 14 11:37:15 2019
 # Map Benchmarks
 
 import pandas as pd
+import numpy as np
 
 
 dfprt1.loc[:,'BmkCode']=dfprt1.Port_code.map(lambda x:dic_om_index[x][3])
@@ -17,7 +18,8 @@ dfprt_eq=dfprt1[dfprt1.Sec_type.isin(['EQ : ORDINARY', 'EQ : RIGHTS',  'FUTURE :
 
 # Add Futures and cash inforamtion
 
-fut_dta=n_comb[['Port_code','tot_fut','Close_price','Future_Code_y']]
+fut_dtaX=n_comb[['Port_code','tot_fut','Close_price','Future_Code_y']]
+fut_dta = fut_dtaX.copy()
 fut_dta.loc[:,'EffExposure']=fut_dta[['tot_fut']].values*np.nan_to_num(fut_dta[['Close_price']].values)*10
 fut_dta.loc[:,'MarketValue']=0
 fut_dta.loc[:,'Quantity']= fut_dta['tot_fut']
@@ -30,8 +32,10 @@ fut_dta.loc[:,'Trade_date']=dfprt1['Trade_date'].head(len(fut_dta)).values
 fut_dta=fut_dta[['Close_price', 'EffExposure','MarketValue','Port_code','Quantity','Sec_code', 'Sec_name','Sec_type','Trade_date']]
 fut_dta=fut_dta[~(fut_dta.Sec_code=='NoFuture')]
 
+del fut_dtaX
 
-cash_dta=n_comb[['Port_code','cash_bpm']]
+cash_dtaX=n_comb[['Port_code','cash_bpm']]
+cash_dta=cash_dtaX.copy()
 cash_dta.loc[:,'Close_price'] = 1
 cash_dta.loc[:,'EffExposure']= cash_dta['cash_bpm']
 cash_dta.loc[:,'MarketValue'] = cash_dta['cash_bpm']
@@ -42,6 +46,9 @@ cash_dta.loc[:,'Trade_date']=dfprt1['Trade_date'].head(len(cash_dta)).values
 cash_dta.loc[:,'Sec_name'] = 'VAL'
 
 cash_dta=cash_dta[['Close_price', 'EffExposure','MarketValue','Port_code','Quantity','Sec_code', 'Sec_name','Sec_type','Trade_date']]
+
+
+del cash_dtaX
 
 tot_dta = fut_dta.append(cash_dta, sort=False)
 tot_dta.loc[:,'TypeFund']=tot_dta.Port_code.map(lambda x:dic_om_index[x][2])
@@ -62,7 +69,7 @@ dfprt_all = dfprt_eq.append(tot_dta, sort=False)
 
 # Pul in exceptions
 
-excep_xls = ((pd.read_excel('\\\\za.investment.int\\dfs\\dbshared\\DFM\\Benchmarks\\BlockList\\20190315 - ALSI SWIX 3rdP Blocklist - New.xls')).iloc[:,0]).to_list()
+excep_xls = ((pd.read_excel('\\\\za.investment.int\\dfs\\dbshared\\DFM\\Benchmarks\\BlockList\\20190315 - ALSI SWIX 3rdP Blocklist - New.xls')).iloc[:,0]).tolist()
 
 # Pull in n_comb (data - cash_bpm, tot_fut)
 
@@ -121,12 +128,12 @@ all_dta.columns = ['BComCode','BSec_code','Comp_price','comp_quantity','CompValu
 dfprt_comp = pd.merge(dfprt_all,all_dta,left_on=['Sec_code'], right_on=['Comp_Code'], how = 'outer')
 dfprt_comp  = dfprt_comp[~dfprt_comp.Sec_code.isnull()]
 
-dfprt_comp['Cmb_code'] =   np.where(dfprt_comp.Sec_type.isin(['FUTURE : EQUITY','EQ : RIGHTS']), dfprt_comp.BComCode,
+dfprt_comp.loc[:,'Cmb_code'] =   np.where(dfprt_comp.Sec_type.isin(['FUTURE : EQUITY','EQ : RIGHTS']), dfprt_comp.BComCode,
                                     np.where(dfprt_comp.BSec_code.isnull(), dfprt_comp.Sec_code.values, 
                                              dfprt_comp.BSec_code.values))
 
-dfprt_comp['Cmb_effexp']=np.where(dfprt_comp.Comp_wgt.isnull(), dfprt_comp.EffExposure.values, dfprt_comp.Comp_wgt.values*dfprt_comp.EffExposure.values)
-dfprt_comp['Cmb_effexp']=np.where(dfprt_comp.Sec_type.isin(['EQ : RIGHTS']), dfprt_comp.Quantity.values*dfprt_comp.Comp_price.values, dfprt_comp.Cmb_effexp.values)
+dfprt_comp.loc[:,'Cmb_effexp']=np.where(dfprt_comp.Comp_wgt.isnull(), dfprt_comp.EffExposure.values, dfprt_comp.Comp_wgt.values*dfprt_comp.EffExposure.values)
+dfprt_comp.loc[:,'Cmb_effexp']=np.where(dfprt_comp.Sec_type.isin(['EQ : RIGHTS']), dfprt_comp.Quantity.values*dfprt_comp.Comp_price.values, dfprt_comp.Cmb_effexp.values)
 
 #dfprt_comp[dfprt_comp.Sec_code.isin(['RBP','RBPN','ALSIJ19','DSWIXCCH','DRIEQCCH','OMUSJ19','NXDSJ19'])].to_csv('c:\\data\\right_x.csv')
 
@@ -170,7 +177,7 @@ fund= 'ALSCPF'
 buffer=0.0005
 min_trd_thrs=0.0005
 #sub_fnd=dfprt_comp_agg_R_B_q[dfprt_comp_agg_R_B_q.Port_code==fnd]
-tgt_eff_cash=n_comb[n_comb.Port_code==fnd]['fin_teff_cash']
+tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash']
 """
 ' 1=Buy
 ' 2=Sell
@@ -179,9 +186,10 @@ tgt_eff_cash=n_comb[n_comb.Port_code==fnd]['fin_teff_cash']
 
 tdr_typ=1 #
 
-def trade_fx( n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=0.0005, fnd=fund, trade_type=tdr_typ, excep=True,min_hold= 0.00001):
+def trade_fx( n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs=0.0005, buffer=0.0005, fnd='ALSCPF', trade_type=1, excep=True,min_hold= 0.00001):
     
-    
+    import numpy as np
+    import pandas as pd
 
     if trade_type==1:
         rank_tab=(dfprt_comp_agg_R_B_q[dfprt_comp_agg_R_B_q.Port_code==fnd]).sort_values(['act_bet'], ascending = True)
@@ -192,7 +200,8 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=0
        # pos_bets=(rank_tab[((rank_tab.act_bet>0)&(rank_tab.Sec_code!='ZAR'))]['act_bet']).sum()
        # neg_bets=(rank_tab[((rank_tab.act_bet<0)&(rank_tab.Sec_code!='ZAR'))]['act_bet']).sum()
     
-        
+    tgt_eff_cash=n_comb[n_comb.Port_code==fnd]['fin_teff_cash']
+    
     ex_ZAR=rank_tab.copy()
     ex_ZAR=ex_ZAR[ex_ZAR.Sec_code!='ZAR']
     # Exclude the illiquid stocks at this point
@@ -201,28 +210,44 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=0
         
     ex_ZAR.loc[:,'use_bet']=np.where(ex_ZAR['act_bet']<0,(ex_ZAR['act_bet']-buffer).values, (ex_ZAR['act_bet']+buffer).values)
     
-    if trade_type==2:
+    if trade_type in [2,3]:
         ex_ZAR.loc[:,'use_bet']=np.where(ex_ZAR['use_bet']>0, 
-                                             np.where(ex_ZAR['use_bet']>ex_ZAR['fnd_wgt'],ex_ZAR['fnd_wgt'].values, ex_ZAR['use_bet'].values),
+                                         np.where(ex_ZAR['use_bet']>ex_ZAR['fnd_wgt'],ex_ZAR['fnd_wgt'].values, ex_ZAR['use_bet'].values),ex_ZAR['use_bet'].values)
         ex_ZAR.loc[:,'re_flag']=np.where(ex_ZAR['use_bet']>0, np.where(ex_ZAR['use_bet']>ex_ZAR['fnd_wgt'], 1 , 0) ,0)
-        
-    ex_ZAR.loc[:,'abs_act_bet']=ex_ZAR.use_bet.abs()
     
-    tn_o = min(abs((rank_tab[rank_tab.Sec_code=='ZAR']['fnd_wgt'].values)), 
-                max(rank_tab[rank_tab.act_bet<0]['act_bet'].abs().sum(),rank_tab[rank_tab.act_bet>0]['act_bet'].abs().sum())
-              )+np.where(trade_type==1,-tgt_eff_cash,tgt_eff_cash)
-  #  print("Tgt eff cash is:", tgt_eff_cash)
+    if trade_type ==3:
+        ex_ZAR.loc[:,'pos_bet_sells']=np.where((ex_ZAR['use_bet']>0)&(ex_ZAR['use_bet'].abs() >= min_trd_thrs),ex_ZAR['use_bet'].values,0)
+        ex_ZAR.loc[:,'neg_bet_buys']=np.where((ex_ZAR['use_bet']<0)&(ex_ZAR['use_bet'].abs() >= min_trd_thrs),ex_ZAR['use_bet'].values,0)
+        to_bs=max(abs(ex_ZAR['pos_bet_sells'].sum()), abs(ex_ZAR['neg_bet_buys'].sum()))
+    
+    ex_ZAR.loc[:,'abs_act_bet']=ex_ZAR['use_bet'].abs()
+    
+    if trade_type==3:
+        tn_o=to_bs
+    else:
+        tn_o = min(abs((rank_tab[rank_tab.Sec_code=='ZAR']['fnd_wgt'].values)), 
+                    max(rank_tab[rank_tab.act_bet<0]['act_bet'].abs().sum(),rank_tab[rank_tab.act_bet>0]['act_bet'].abs().sum())
+                  )+np.where(trade_type==1,-tgt_eff_cash,tgt_eff_cash)
+      #  print("Tgt eff cash is:", tgt_eff_cash)
     
     if trade_type in [1,2]:
         ex_ZAR.loc[:,'cum_trade']= np.where((ex_ZAR.use_bet.abs()>=min_trd_thrs)&(ex_ZAR.abs_act_bet.cumsum().values<=tn_o)
                                               ,ex_ZAR.abs_act_bet.values,0)
+    elif trade_type==3:
+        if (abs(ex_ZAR['pos_bet_sells'].sum()) > abs(ex_ZAR['neg_bet_buys'].sum())):
+            ex_ZAR['cum_trade']= ex_ZAR['neg_bet_buys'].values.abs()
+            ex_ZAR = ex_ZAR.sort_values(['act_bet'], ascending = True)
+        else:
+            ex_ZAR['cum_trade']= ex_ZAR['pos_bet_sells'].values.abs()
+            ex_ZAR = ex_ZAR.sort_values(['act_bet'], ascending = False)
+            
         excess=min(np.int((tn_o-ex_ZAR.loc[:,'cum_trade'].sum())/min_trd_thrs), len(ex_ZAR)-len(ex_ZAR[ex_ZAR.cum_trade!=0]))
         if excess>0:
         #    print("yes")
             r=(np.arange(len(ex_ZAR.index[ex_ZAR['cum_trade'] !=0].tolist()),len(ex_ZAR.index[ex_ZAR['cum_trade'] !=0].tolist())+(excess))).tolist()
             if len(r)<=1:
                 r=np.floor(r[0]).astype(int)
-            if trade_type==2:    
+            if trade_type in [2,3]:    
                 ex_ZAR.cum_trade.iloc[r] = np.where(ex_ZAR['fnd_wgt'].iloc[r] < min_trd_thrs, ex_ZAR['fnd_wgt'].iloc[r] , min_trd_thrs)
                 ex_ZAR.loc[:,'cum_trade'] = np.where((ex_ZAR['fnd_wgt']-ex_ZAR['cum_trade']) < min_hold, ex_ZAR['fnd_wgt'].values , ex_ZAR['cum_trade'].values)
                 ex_ZAR.loc[:,'re_flag'] = np.where((ex_ZAR['re_flag']==0)&((ex_ZAR['cum_trade'] < min_trd_thrs)|((ex_ZAR['fnd_wgt']-ex_ZAR['cum_trade'])<min_hold)), 1 , ex_ZAR['re_flag'].values) # Sell out
@@ -231,26 +256,36 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=0
                 ex_ZAR.cum_trade.iloc[r] = min_trd_thrs
                 ex_ZAR.loc[:,'re_flag'] = 0
             else:
-                x=1 ## place holder for (two-way)
+                pass ## place holder for (two-way)
         else:
             if trade_type==1:
                 ex_ZAR.loc[:,'re_flag'] = 0
             elif trade_type==2:
                 ex_ZAR.loc[:,'re_flag'] =ex_ZAR.loc[:,'re_flag'] 
             else:
-                x=1 # placeholder
+                pass # placeholder
         
     else: # placholder
-        ex_ZAR=ex_ZAR.sort_values(['abs_act_bet'],ascending = False)
-        ex_ZAR.loc[:,'cum_trade']= np.where(((ex_ZAR.use_bet.abs()>=min_trd_thrs)&(ex_ZAR.abs_act_bet.cumsum().values<=abs(np.Inf))),
-                                             ex_ZAR.abs_act_bet.values,0)*np.where(ex_ZAR['act_bet']<0,1,-1)
-        ex_ZAR.loc[:,'re_flag'] = 0 # placeholder
+     #   ex_ZAR=ex_ZAR.sort_values(['abs_act_bet'],ascending = False)
+     #   ex_ZAR.loc[:,'cum_trade']= np.where(((ex_ZAR.use_bet.abs()>=min_trd_thrs)&(ex_ZAR.abs_act_bet.cumsum().values<=abs(np.Inf))),
+     #                                        ex_ZAR.abs_act_bet.values,0)*np.where(ex_ZAR['act_bet']<0,1,-1)
+     #   ex_ZAR.loc[:,'re_flag'] = 0 # placeholder
+         pass
         
         # need to add two-way here
         #.......
     dif_pos=tn_o-ex_ZAR['cum_trade'].sum()
   
     ex_ZAR.loc[:,'part_trade']=dif_pos*np.where(ex_ZAR['re_flag']==1,0,(ex_ZAR.cum_trade/(ex_ZAR[ex_ZAR.re_flag==0].cum_trade.sum())))+ex_ZAR.cum_trade
+    if trade_type==3:
+        if (abs(ex_ZAR['pos_bet_sells'].sum()) > abs(ex_ZAR['neg_bet_buys'].sum())):
+            ex_ZAR['neg_bet_buys']=ex_ZAR['part_trade'].values
+        else:
+            ex_ZAR['pos_bet_sells']=-1*ex_ZAR['part_trade'].values
+        
+        ex_ZAR.loc[:,'part_trade']= ex_ZAR['neg_bet_buys'].fillna(0)-ex_ZAR['pos_bet_sells'].fillna(0).abs()
+
+        
     rank_tab = rank_tab.merge(ex_ZAR[['Port_code','Sec_code','part_trade']], how='left', on = ['Port_code','Sec_code'])
     rank_tab.loc[:,'part_trade']=rank_tab.part_trade.fillna(0)
     
@@ -260,19 +295,21 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=0
     elif trade_type==2:
         rank_tab.loc[:,'part_trade']= np.where(rank_tab.Sec_code=='ZAR', 1*ex_ZAR.part_trade.sum(), -1*rank_tab.part_trade.values)
         rank_tab.loc[:,'new_wgt']=rank_tab.part_trade.values+rank_tab.fnd_wgt.values
-        
+    else:
+        rank_tab.loc[:,'part_trade']= np.where(rank_tab.Sec_code=='ZAR', (1*ex_ZAR.part_trade.sum()), rank_tab.part_trade.values)
+        rank_tab.loc[:,'new_wgt']=rank_tab.part_trade.values+rank_tab.fnd_wgt.values
+            
         
     rank_tab.loc[:,'new_act_bet']=rank_tab.new_wgt-rank_tab.bmk_wgt
     max_bet=((rank_tab[(rank_tab.Sec_code!='ZAR')].new_act_bet.abs()).max())
     
     return [max_bet,buffer,rank_tab]
 
-trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash'],
-         fnd=fund, trade_type=tdr_typ)
+trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs=0.0005, buffer=0.0005, fnd='ALSCPF', trade_type=1)
 
 
-trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash'],
-         fnd=fund, trade_type=tdr_typ)
+trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer=0.00049731, tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash'],
+         fnd=fund, trade_type=2)
 
 out=trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, tgt_eff_cash=n_comb[n_comb.Port_code=='OMCD02']['fin_teff_cash'],
          fnd='OMCD01', trade_type=2)

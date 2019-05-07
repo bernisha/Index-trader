@@ -846,6 +846,7 @@ def tloader_fmt_equity(selct_on=1):
         if selct_on in [3,2]: 
             fut=pd.read_csv(root.filenameF, header = None) 
             fut[6]=''
+            fut[3]= fut[3].astype(int)
         
       
         with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
@@ -1737,7 +1738,6 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
 """
 
 
-
 def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB']):
     
     import win32com.client #import Dispatch
@@ -1790,7 +1790,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         bsm=[]
         fsm=[]
         
-        with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\n') as fin:
+        with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fin:
         
             for j in range(3, len(lst_fund)*2+2, 2):
           #      print(j)
@@ -1814,7 +1814,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
                     msg="No cash file generated"
                     bsm=bsm+[msg]
         
-        with open(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\n') as fut:
+        with open(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fut:
             
             for j in range(3, len(lst_fund)*2+2, 2):
                 fund = ws.Cells(7, j).value
@@ -1827,7 +1827,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
                         msg1='No futures file generated'
                         fsm=fsm+[msg1]
                     else:
-                        sf=fut_code+','+fund+','+fut_value+','+str(fut_no)+',''Rebalance Portfolio,MP,,Trade at close\n'
+                        sf=fut_code+','+fund+','+fut_value+','+str(fut_no)+',''Rebalance Portfolio,MP,,Trade at close\r\n'
                         sh=''.join(sf)
                         msg1="Futures file generated"
                         fsm=fsm+[msg1]
@@ -1855,7 +1855,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
        
         wb.Close(False)
         del xl
-    return '\n'.join(list(set(msg+msg1)))
+    return '\r\n'.join(list(set(msg+msg1)))
     
 
 """    
