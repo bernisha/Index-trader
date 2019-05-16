@@ -29,7 +29,8 @@ def look_through_fx(dfprt1,n_comb,fund_xls,dic_om_index,cash_flows_eff, lst_fund
     fut_dta.loc[:,'EffExposure']=fut_dta[['tot_fut']].values*np.nan_to_num(fut_dta[['Close_price']].values)*10
     fut_dta.loc[:,'MarketValue']=0
     fut_dta.loc[:,'Quantity']= fut_dta['tot_fut']
-    fut_dta.loc[:,'Sec_type']='FUTRE STCK INDX'
+   # fut_dta.loc[:,'Sec_type']='FUTRE STCK INDX'
+    fut_dta.loc[:,'Sec_type']='FUTURE : EQUITY INDEX'
     fut_dta.loc[:,'Sec_code']=fut_dta['Future_Code_y'].values
     fut_dta.loc[:,'Sec_name']=fut_dta['Future_Code_y'].values
     
@@ -100,7 +101,7 @@ def look_through_fx(dfprt1,n_comb,fund_xls,dic_om_index,cash_flows_eff, lst_fund
     # Composites Data
     
     mapp_comp=pd.read_csv('C:\\IndexTrader\\required_inputs\\comp_mappings.csv')
-    mapp_comp['InstName'] = np.where(mapp_comp.Type.isin(['FUTURE : EQUITY','FUTRE STCK INDX']), 
+    mapp_comp['InstName'] = np.where(mapp_comp.Type.isin(['FUTURE : EQUITY','FUTRE STCK INDX','FUTURE : EQUITY INDEX']), 
                                      mapp_comp.InstName+cash_flows_eff.fut_sufx.unique()[0], mapp_comp.InstName)
     dic_om_composites=mapp_comp.set_index(['InstName']).T.to_dict('list')
     
@@ -111,7 +112,7 @@ def look_through_fx(dfprt1,n_comb,fund_xls,dic_om_index,cash_flows_eff, lst_fund
         val_1 = val[1]
         val_2 = val[0]
         print(val_1)
-        if val_2 in ['FUND : LOC EQ','FUTRE STCK INDX']:
+        if val_2 in ['FUND : LOC EQ','FUTRE STCK INDX','FUTURE : EQUITY INDEX']:
             comp_dta=fund_xls[fund_xls.Port_code == val_1][['Port_code','Sec_code','Close_price','Quantity','Market_price']]
             comp_dta['Comp_Code']= key_1
             comp_dta['Comp_wght']=comp_dta['Market_price']/comp_dta['Market_price'].sum()
@@ -132,12 +133,12 @@ def look_through_fx(dfprt1,n_comb,fund_xls,dic_om_index,cash_flows_eff, lst_fund
     dfprt_comp = pd.merge(dfprt_all,all_dta,left_on=['Sec_code'], right_on=['Comp_Code'], how = 'outer')
     dfprt_comp  = dfprt_comp[~dfprt_comp.Sec_code.isnull()]
     
-    dfprt_comp.loc[:,'Cmb_code'] =   np.where(dfprt_comp.Sec_type.isin(['FUTURE : EQUITY','EQ : RIGHTS']), dfprt_comp.BComCode,
+    dfprt_comp.loc[:,'Cmb_code'] =   np.where(dfprt_comp.Sec_type.isin(['FUTURE : EQUITY','EQ : RIGHTS','EQ : STANDARD RIGHTS ISSUE']), dfprt_comp.BComCode,
                                         np.where(dfprt_comp.BSec_code.isnull(), dfprt_comp.Sec_code.values, 
                                                  dfprt_comp.BSec_code.values))
     
     dfprt_comp.loc[:,'Cmb_effexp']=np.where(dfprt_comp.Comp_wgt.isnull(), dfprt_comp.EffExposure.values, dfprt_comp.Comp_wgt.values*dfprt_comp.EffExposure.values)
-    dfprt_comp.loc[:,'Cmb_effexp']=np.where(dfprt_comp.Sec_type.isin(['EQ : RIGHTS']), dfprt_comp.Quantity.values*dfprt_comp.Comp_price.values, dfprt_comp.Cmb_effexp.values)
+    dfprt_comp.loc[:,'Cmb_effexp']=np.where(dfprt_comp.Sec_type.isin(['EQ : RIGHTS','EQ : STANDARD RIGHTS ISSUE']), dfprt_comp.Quantity.values*dfprt_comp.Comp_price.values, dfprt_comp.Cmb_effexp.values)
     
     #dfprt_comp[dfprt_comp.Sec_code.isin(['RBP','RBPN','ALSIJ19','DSWIXCCH','DRIEQCCH','OMUSJ19','NXDSJ19'])].to_csv('c:\\data\\right_x.csv')
     

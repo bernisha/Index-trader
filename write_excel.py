@@ -12,7 +12,7 @@ Created on Thu Mar 29 15:02:40 2018
 '******************************************************************************************************************************************************************************    
 """
 
-def assetClassF(Sec_type, ins_code,sec_nam,Type_Fund, cash_flows_eff):
+def assetClassFO(Sec_type, ins_code,sec_nam,Type_Fund, cash_flows_eff):
     
         #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
         ssf=['S']
@@ -47,6 +47,45 @@ def assetClassF(Sec_type, ins_code,sec_nam,Type_Fund, cash_flows_eff):
             return str("Equity Exposure,"+"Equity Fund,"+str(ins_code)+",Equity Exposure")
         else:
             return "Other,null,null,Other"
+
+
+def assetClassF(Sec_type, ins_code,sec_nam,Type_Fund, cash_flows_eff):
+    
+        #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
+        ssf=['S']
+        #excp=['OMLF'+str((cash_flows_eff['fut_sufx'].values)[0]),'OMAF'+str((cash_flows_eff['fut_sufx'].values)[0])]
+        excp=['F']
+        ind_fut=[str((cash_flows_eff['fut_sufx'].values)[0])] # index future suffix
+        
+        if Sec_type == 'CASH : CALL ACCOUNT':
+            return "Total cash,Settled cash,Cash on call,Total cash"
+        elif Sec_type=='CASH : SAFEX MARGIN ACCOUNT':
+            return "Total cash,Settled cash,Futures margin,Total cash"
+        elif Sec_type == "CURRENCY" and sec_nam=='VAL':
+            return "Total cash,Settled cash,Val cash,Total cash"
+        elif Sec_type=="PAYABLE" and sec_nam=='DIF':
+            return "Total cash,Unsettled cash,Dif cash,Total cash"
+        elif Sec_type=='FUTURE : EQUITY INDEX':
+            return str("Futures Exposure,"+"Index Future,"+str(ins_code[0:4]+ind_fut[0])+",Futures Exposure")
+    #    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
+        elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
+    #        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
+            return str("Futures Exposure,"+"SSF,null"+",Futures Exposure")
+        elif Sec_type=='EQ : ORDINARY SHARE':
+            return "Equity Exposure,Equity,null,Equity Exposure"
+        elif Sec_type=='EQ : STANDARD RIGHTS ISSUE':
+            return "Equity Exposure,Equity Rights,null,Equity Exposure"
+        elif Sec_type=='EQ : FOREIGN EQUITY' and Type_Fund != 'M':
+            return "Equity Exposure,Equity Foreign,null,Equity Exposure"
+        elif ins_code[3:4] in(excp):
+    #        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
+            return str("Dividend Exposure,"+"SSF Div,null,Dividend Exposure")
+        elif Sec_type=="FUND : LOCAL EQUITY":
+            return str("Equity Exposure,"+"Equity Fund,"+str(ins_code)+",Equity Exposure")
+        else:
+            return "Other,null,null,Other"
+
+
             
             
 def res_indF(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','AssetType4','Quantity','EffExposure','MarketValue','FundValue','Close_price']):
@@ -59,7 +98,7 @@ def res_indF(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','As
     return dat
 
 
-def assetClassB(Sec_type, ins_code,sec_nam, Type_Fund,cash_flows_eff):
+def assetClassBO(Sec_type, ins_code,sec_nam, Type_Fund,cash_flows_eff):
 
     #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
     ssf=['S']
@@ -97,7 +136,45 @@ def assetClassB(Sec_type, ins_code,sec_nam, Type_Fund,cash_flows_eff):
     else:
         return "Other,null,null,Other,OTHER"
         
-        
+def assetClassB(Sec_type, ins_code,sec_nam, Type_Fund,cash_flows_eff):
+
+    #ssf=['OMLS'+str((cash_flows_eff['fut_sufx'].values)[0]), 'OMAS'+str((cash_flows_eff['fut_sufx'].values)[0])]
+    ssf=['S']
+    #excp=['OMLF'+str((cash_flows_eff['fut_sufx'].values)[0]),'OMAF'+str((cash_flows_eff['fut_sufx'].values)[0])]
+    excp=['F']
+    ind_fut=[str((cash_flows_eff['fut_sufx'].values)[0])] # index future suffix
+    
+    if Sec_type == 'CASH : CALL ACCOUNT':
+        return "A. Total cash,Settled cash,Cash on call,Total cash,C. CALL"
+    elif Sec_type=='CASH : SAFEX MARGIN ACCOUNT':
+        return "A. Total cash,Settled cash,Futures margin,Total cash,D. SAFEX"
+    elif Sec_type == "CURRENCY" and sec_nam=='VAL':
+        return "A. Total cash,Settled cash,Val cash,Total cash,A. VAL"
+    elif Sec_type=="PAYABLE" and sec_nam=='DIF':
+        return "A. Total cash,Unsettled cash,Dif cash,Total cash,B. DIF"
+    elif Sec_type=='FUTURE : EQUITY INDEX':
+        return str("B. Futures Exposure,"+"Index Future,"+str(ins_code[0:4]+ind_fut[0])+",Futures Exposure,A. INDEX FUTURES")
+
+
+#    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
+    elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
+#        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
+        return str("B. Futures Exposure,"+"SSF,null"+",Futures Exposure"+",B. SSF")
+    elif Sec_type=='EQ : ORDINARY SHARE':
+        return "Equity Exposure,Equity,null,Equity Exposure,EQUITY"
+    elif Sec_type=='EQ : STANDARD RIGHTS ISSUE':
+        return "Equity Exposure,Equity Rights,null,Equity Exposure,EQUITY"
+    elif Sec_type=='EQ : FOREIGN EQUITY' and Type_Fund !='M':
+        return "Equity Exposure,Equity Foreign,null,Equity Exposure,EQUITY"
+    elif ins_code[3:4] in(excp):
+#        return str("Dividend Exposure,"+"SSF Div,"+str(excp[0]))
+        return str("Dividend Exposure,"+"SSF Div,null,Dividend Exposure,SSF DIV")
+    elif Sec_type=="FUND : LOCAL EQUITY":
+        return str("Equity Exposure,"+"Equity Fund,"+str(ins_code)+",Equity Exposure,EQUITY")
+    else:
+        return "Other,null,null,Other,OTHER"
+            
+    
 def res_indB(dat,des,ind=['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','AssetType4','AssetType5','Quantity','EffExposure','MarketValue','FundValue','Close_price']):
     dat=dat.reset_index()
     dat['AssetType1']=des
@@ -1872,7 +1949,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
 
 
 
-def cash_flow_validity_fx(cash_flows_eff,newest,startDate,lst_fund, bf=0.005):
+def cash_flow_validity_fx(cash_flows_eff,newest_cash,startDate,lst_fund, bf=0.005):
 
     import pandas as pd
     import numpy as np
@@ -1882,7 +1959,7 @@ def cash_flow_validity_fx(cash_flows_eff,newest,startDate,lst_fund, bf=0.005):
 #newest=str(dirtoimport_file+'UFMPosCash20190128.xls')
 #startDate=startDate.replace(day=28)
 
-    cash_xls = pd.read_excel(newest,sheet_name='Cash', 
+    cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
                              converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
                                                 'Portfolio':str, 'Type':str, 
                                                 'Security name':str,
@@ -1891,6 +1968,18 @@ def cash_flow_validity_fx(cash_flows_eff,newest,startDate,lst_fund, bf=0.005):
                                                 ' +/-':str,
                                                 'Amount': float},
                             )
+
+#    cash_xls = pd.read_excel(newest, sheet_name='Detail', 
+#                           converters={'Portfolio': str,
+#                                       'Instrument': str,
+#                                       'Currency': str,
+#                                       'Type':str,
+#                                       'Sign':str,
+#                                       'Qty':float,
+#                                       'Amt Current':float,
+#                                       'Amt Gross':float,
+#                                       'Trade date':pd.to_datetime,
+#                                       'Settle Date': pd.to_datetime},)
     
     cash_xls.columns = [col.strip()  for col in cash_xls.columns]
     
@@ -2065,3 +2154,16 @@ def BPM_output_loads():
 '******************************************************************************************************************************************************************************    
 '******************************************************************************************************************************************************************************    
 """
+
+
+
+"""
+'******************************************************************************************************************************************************************************    
+                                                                        Round Down Function
+'******************************************************************************************************************************************************************************    
+"""
+
+def round_down(n, decimals=0):
+    import math
+    multiplier = 10 ** decimals
+    return math.floor(n * multiplier) / multiplier
