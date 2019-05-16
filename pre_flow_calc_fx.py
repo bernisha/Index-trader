@@ -4,7 +4,7 @@
 Created on Mon Mar 26 13:09:43 2018
 @author: blala
 """
-def pre_flow_calcFx(response,automatic=False):
+def pre_flow_calcFx(response,automatic=False,orders=False):
     #import future
 
     import sys
@@ -33,7 +33,7 @@ def pre_flow_calcFx(response,automatic=False):
     from write_excel import trade_calc_automatic as t_c_a
     from write_excel import bulk_cash_excel_report as bcer
     from write_excel import cash_flow_validity_fx as cfvf
-    from write_excel import assetClassB as assetClass
+    from write_excel import assetClassBO as assetClass
     from write_excel import res_indB as res_ind
     from write_excel import fx_dtaB as fx_dta
     
@@ -41,6 +41,7 @@ def pre_flow_calcFx(response,automatic=False):
     if testing:
         response= 'yes'
         automatic = True
+        orders=False
         
     
     if response:
@@ -81,8 +82,11 @@ def pre_flow_calcFx(response,automatic=False):
         folder_day = datetime.strftime(startDate, "%d")
         
         # Fund settings
-        dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\'
+       # dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\'
         #dirtoimport_file= 'H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\'
+        dirtoimport_file='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
+        dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
+     
         
         # directory to export report to
         #dirtooutput_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Futures Trades'
@@ -151,6 +155,7 @@ def pre_flow_calcFx(response,automatic=False):
         pub_holidays = (pd.read_excel("C:\\IndexTrader\\required_inputs\\public_holidays.xlsx"))['pub_holidays'].tolist()
         #cal = Calendar(holidays=pub_holidays)
         
+                
          # Determine list of funds to trade
         lst_fund=sf()
         
@@ -228,18 +233,28 @@ def pre_flow_calcFx(response,automatic=False):
         """
         #newest = max(glob.iglob(dirtoimport_file+'fund_data/*.xls'), key=os.path.getmtime)
         newest = max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
+        newest_cash=max(glob.iglob(dirtoimport_cashfile+'*.xls'), key=os.path.getmtime)
         #str(dirtoimport_file+newest)
         #newest
         
-        fund_xls = pd.read_excel(newest,converters={'Portfolio code':str, 'Price date': pd.to_datetime, 
-        'Security type (name)':str, 
-        'Security name':str,
-        'Security ISIN code':str,
-        'Security acronym':str,
-        'Close price':float,
-        'Quantity held':float,
-        'Market price value':float},
+        fund_xls = pd.read_excel(newest,sheet_name=0,converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+        'Inst Type':str, 
+        'Inst Name':str,
+        'ISIN':str,
+        'Instrument':str,
+        'Quote Close':float,
+        'Qty':float,
+        'Market Val':float,
+        'Delta':float,	
+        'Origin':str},
         )
+
+        fund_xls=fund_xls.drop(['Delta'],axis=1)
+        if orders:
+            pass
+        else:
+            fund_xls=fund_xls[fund_xls.Origin=='POSITION']
+        fund_xls=fund_xls.drop(['Origin'],axis=1)
         #fund_xls.dtypes
         
         fund_xls.columns = ['Port_code','Price_date','Sec_type','Sec_name','Sec_ISIN','Sec_code','Close_price','Quantity','Market_price']
@@ -301,7 +316,7 @@ def pre_flow_calcFx(response,automatic=False):
         
                     
         if ~cash_flows_eff.empty:
-            xx=cfvf(cash_flows_eff, newest,startDate, lst_fund,bf=0.005)
+            xx=cfvf(cash_flows_eff, newest_cash,startDate, lst_fund,bf=0.005)
             cash_flows_eff=cash_flows_eff.merge((xx[1])[['Port_code','Inflow_use']], on=['Port_code'], how='left')
             cash_flows_eff=cash_flows_eff[['Port_code', 'Inflow_use', 'Eff_cash', 'fut_sufx']]
             cash_flows_eff.columns=['Port_code', 'Inflow', 'Eff_cash', 'fut_sufx']
