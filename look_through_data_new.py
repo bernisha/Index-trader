@@ -207,7 +207,7 @@ tgt_eff_cash=n_comb[n_comb.Port_code==fund]['fin_teff_cash']
 
 tdr_typ=1 #
 
-def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excl_xls, zxclusion , min_trd_thrs=0.0005, buffer=0.0005, fnd='ALSCPF', trade_type=3, excep=True,min_hold= 0.00001):
+def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion , min_trd_thrs=0.0005, buffer=0.0005, fnd='ALSCPF', trade_type=3, excep=True,min_hold= 0.00001):
     
     import numpy as np
     import pandas as pd
@@ -275,7 +275,7 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excl_xls, zxclusion , min_trd_thrs=0.
             
         
         if (ZAR_amt>tgt_eff_cash.values)&(eq_trd!=0):
-            to_bs=max(abs((ZAR_amt-tgt_eff_cash).values+abs(ex_ZAR['pos_bet_sells'].sum()))+pos_bet_excl, abs(ex_ZAR['neg_bet_buys'].sum()))
+            to_bs=max(abs((ZAR_amt-tgt_eff_cash).values+abs(ex_ZAR['pos_bet_sells'].sum()))+pos_bet_excl-abs(neg_bet_excl), abs(ex_ZAR['neg_bet_buys'].sum()))
             
             if ((ZAR_amt-tgt_eff_cash).values+abs(ex_ZAR['pos_bet_sells'].sum())) > abs(ex_ZAR['neg_bet_buys'].sum()):
                 pop_neg_bets=True
@@ -336,12 +336,13 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excl_xls, zxclusion , min_trd_thrs=0.
         
        # if (abs(ex_ZAR['pos_bet_sells'].sum()) > abs(ex_ZAR['neg_bet_buys'].sum())):
         if pop_neg_bets:
-            ex_ZAR['cum_trade']= ex_ZAR['neg_bet_buys'].abs().values
+            ex_ZAR.loc[:,'cum_trade']= ex_ZAR['neg_bet_buys'].abs().values
             ex_ZAR = ex_ZAR.sort_values(['neg_bet_buys'], ascending = True)
-            h_tno=tn_o-ex_ZAR.loc[:,'cum_trade'].sum()-abs(neg_bet_excl)
+            h_tno=tn_o-abs(neg_bet_excl)
         else:
             ex_ZAR['cum_trade']= ex_ZAR['pos_bet_sells'].abs().values
             ex_ZAR = ex_ZAR.sort_values(['pos_bet_sells'], ascending = False)
+            h_tno=tn_o-ex_ZAR.loc[:,'cum_trade'].sum()-abs(pos_bet_excl)
             
             
             

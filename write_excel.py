@@ -2051,14 +2051,66 @@ Created on Mon Feb 25 10:51:22 2019
   Drops re-formatted files into listener folder
   Also archives files into Trades_Archive folder
 """
+def selt_fund():
+    import tkinter 
+    from tkinter import Label
+    from tkinter import filedialog
+    from tkinter import Entry
+    from tkinter import Checkbutton
+    from tkinter import IntVar
+    from tkinter import Button
+    from tkinter import mainloop
+    #from tkinter import *
+    coot = tkinter.Toplevel()
+    coot.geometry("200x150+600+400")
+    Label(coot, text="Please select files to drop:", font="Helvetica 10 bold").grid(row=0, sticky='w')
+    cf = IntVar()
+    Checkbutton(coot, text="Cash File", variable=cf,font="Helvetica 9").grid(row=1, sticky='w')
+    bo = IntVar()
+    Checkbutton(coot, text="Batch Optimisation Report", variable=bo,font="Helvetica 9").grid(row=2, sticky='w')
+    trd = IntVar()
+    Checkbutton(coot, text="Trade List", variable=trd,font="Helvetica 9").grid(row=3, sticky='w')
+
+    Button(coot, text='OK', command=coot.quit, font="Helvetica 10").grid(row=4, pady=10, padx=80)
+       
+    
+    coot.mainloop()
+    
+    coot.withdraw()
+    print(cf.get())
+    
+    if (cf.get()==1):
+       cx=True
+    else:
+       cx=False
+
+    if (bo.get()==1):
+        bx=True
+    else:
+        bx=False
+    
+    if (trd.get()==1):
+        tx=True
+    else:
+        tx=False
+    del [coot, cf, bo, trd]
+    return [cx,bx,tx]
+    
 
 def BPM_output_loads():
 
     import pandas as pd
     
     import os
+    import tkinter 
+    from tkinter import Label
     from tkinter import filedialog
-    from tkinter import Tk
+    from tkinter import Entry
+    from tkinter import Checkbutton
+    from tkinter import IntVar
+    from tkinter import Button
+    from tkinter import mainloop
+    from write_excel import selt_fund as selt_fund 
     
     import datetime as dt
     from datetime import datetime, timedelta
@@ -2072,8 +2124,11 @@ def BPM_output_loads():
     user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
     dic_users=user_dict.set_index(['username']).T.to_dict('list')
     
+    
+   
     def selectfiles(path, choose="Choose your Cash file"):
-        root = Tk()
+        
+        root=tkinter.Tk()
         root.filename =  filedialog.askopenfilename(initialdir = path,title = choose)
         #print (root.filename)
         root.withdraw()
@@ -2083,71 +2138,100 @@ def BPM_output_loads():
         
     
     #File directories
-    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
-    batchopt_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
-    
-    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
-    trdlist_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
-    
-    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
-    cashfile_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\CashFile')
-    
-    cash_file=selectfiles(path=cashfile_import_folder)    
-    batchopt_file=selectfiles(choose="Choose your Batch Optimisation file",path=batchopt_import_folder) 
-    trd_file=selectfiles(choose="Choose your Trade file", path=batchopt_import_folder)
-   
-    
-    if ((cash_file=='')or(batchopt_file=='')or(trd_file=='')):
-        msg='Please select \n all 3 files. \n No files imported!'
-        print(msg)
         
+    xyz=selt_fund()
+    msg=''
+    
+    if xyz[0]:
+    
+        dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+        cashfile_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\CashFile')
+        cash_file=selectfiles(path=cashfile_import_folder)    
+        if cash_file=='':
+            xyz[0]=False
+        else:
+            bpm_cashfile=pd.read_csv(cash_file,index_col = None)
+            bpm_cashfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Cash Holdings\\BPM_Cash.csv',header = 1, index=False)
+      
     else:
+        pass
     
-        bpm_cashfile=pd.read_csv(cash_file,index_col = None)
-        tradelist=pd.read_csv(trd_file, header = 1)
-        batchoptimisationfile=pd.read_excel(batchopt_file, usecols='D:P', header = 1)
+    if xyz[1]:
+    
+        dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+        batchopt_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
+        batchopt_file=selectfiles(choose="Choose your Batch Optimisation file",path=batchopt_import_folder) 
+        if batchopt_file=='':
+            xyz[1]=False
+        else:
+            batchoptimisationfile=pd.read_excel(batchopt_file, usecols='D:P', header = 1)
+             
+            #Edit Batch Optimisation report
+            batchoptimisationfile = batchoptimisationfile.dropna(axis=0, subset=['Portfolio']) #if the portfolio column is empty then drop the row
+            batchoptimisationfile['Active Risk'] *= 100  #multiply active risk column by 100
+            batchoptimisationfile['Turnover'] *= 100  #multiply turover column by 100
+            batchoptimisationfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Batch Optimisation\\Batch Optimisation.csv', index=False)
         
+    else: 
+        pass
+   
+    if  xyz[2]:
+    
+        dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+        trdlist_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
+        trd_file=selectfiles(choose="Choose your Trade file", path=trdlist_import_folder)
+        if trd_file=='':
+            xyz[2]=False
+        else:
+            tradelist=pd.read_csv(trd_file, header = 1)
+            tradelist.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Trades\\TradeList.csv', index=False)
+
+    else:
+        pass
+    
+    
+    if ((xyz[0]==False)&(xyz[1]==False)&(xyz[2]==False)):
+        msg='Please select \n file(s). \n No file(s) imported!'
+        print(msg)
+       
+    else:
         
-        #Edit Batch Optimisation report
-        batchoptimisationfile = batchoptimisationfile.dropna(axis=0, subset=['Portfolio']) #if the portfolio column is empty then drop the row
-        batchoptimisationfile['Active Risk'] *= 100  #multiply active risk column by 100
-        batchoptimisationfile['Turnover'] *= 100  #multiply turover column by 100
-        
-        
-        
-        #Drop files in Listening Folder
+       #Drop files in Listening Folder
         #batchoptimisationfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Batch Optimisation\\Batch Optimisation.csv', index=False)
         #tradelist.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Trades\\TradeList.csv', index=False)
         #bpm_cashfile.to_csv('\\\\ZAWCAPP63\\OMIGSADataHub\\Workflows\\Listen\\ReconTool\\Cash Holdings\\BPM_Cash.csv', index=False)
         
-        batchoptimisationfile.to_csv('\\\\ZACTNAPP54\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Batch Optimisation\\Batch Optimisation.csv', index=False)
-        tradelist.to_csv('\\\\ZACTNAPP54\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Trades\\TradeList.csv', index=False)
-        bpm_cashfile.to_csv('\\\\ZACTNAPP54\\OMIGSADataHub\\Workflows\\Listen\\ReconToolNewServer\\Cash Holdings\\BPM_Cash.csv',header = 1, index=False)
-
+    
         
         #archive the files imported
         dirtoexport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\TRADES_ARCHIVE'
         
-        batchopt_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\BatchOptimisation')
-        if not os.path.exists(batchopt_archive_folder):
-            os.makedirs(batchopt_archive_folder)
+        if xyz[1]:
+            batchopt_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\BatchOptimisation')
+            if not os.path.exists(batchopt_archive_folder):
+                os.makedirs(batchopt_archive_folder)
+            batchoptimisationfile.to_csv('\\'.join([batchopt_archive_folder,str('Batch_optimisation_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]), index=False)
+            msg=msg+'Batch Opt,'
         
+        if xyz[2]:
+            trdlist_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\TradeList')
+            if not os.path.exists(trdlist_archive_folder):
+                os.makedirs(trdlist_archive_folder)
+            tradelist.to_csv('\\'.join([trdlist_archive_folder,str('Tradelist_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]), index=False)
+            msg=msg+' Trade file, '
+            
+        if xyz[0]:
+            cashfile_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\CashFile')
+            if not os.path.exists(cashfile_archive_folder):
+                os.makedirs(cashfile_archive_folder)
+            bpm_cashfile.to_csv('\\'.join([cashfile_archive_folder,str('Cashfile_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]), index=False)
+            msg=msg+' Cash File '
         
-        trdlist_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\TradeList')
-        if not os.path.exists(trdlist_archive_folder):
-            os.makedirs(trdlist_archive_folder)
-        
-        
-        cashfile_archive_folder=str('\\'.join([dirtoexport_file ,folder_yr, folder_mth,folder_day])+'\\CashFile')
-        if not os.path.exists(cashfile_archive_folder):
-            os.makedirs(cashfile_archive_folder)
-        
-        
-        batchoptimisationfile.to_csv('\\'.join([batchopt_archive_folder,str('Batch_optimisation_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]))
-        tradelist.to_csv('\\'.join([trdlist_archive_folder,str('Tradelist_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]))
-        bpm_cashfile.to_csv('\\'.join([cashfile_archive_folder,str('Cashfile_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv')]))
-        msg='All files \n generated & saved'
-        
+        if (xyz[0]&xyz[1]&xyz[2]):
+            msg='All files \n generated & saved'
+        else:
+            msg=msg+'imported!'
+            
     return msg
 
 """

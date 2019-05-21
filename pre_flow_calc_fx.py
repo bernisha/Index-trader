@@ -33,7 +33,7 @@ def pre_flow_calcFx(response,automatic=False,orders=False):
     from write_excel import trade_calc_automatic as t_c_a
     from write_excel import bulk_cash_excel_report as bcer
     from write_excel import cash_flow_validity_fx as cfvf
-    from write_excel import assetClassBO as assetClass
+    from write_excel import assetClassB as assetClass
     from write_excel import res_indB as res_ind
     from write_excel import fx_dtaB as fx_dta
     
