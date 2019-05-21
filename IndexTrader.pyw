@@ -27,11 +27,66 @@ from write_excel  import create_BPMcashfile as cash_bpm
 from pre_flow_calc_fx import pre_flow_calcFx as batch_calc_fx
 from write_excel import tloader_fmt_equity as tloader_equity_or_fut
 from write_excel import BPM_output_loads as list_lds
+from write_excel import selt_fund as selt_fund
 
 def resource_path(relative_path):
      if hasattr(sys, '_MEIPASS'):
          return os.path.join(sys._MEIPASS, relative_path)
      return os.path.join(os.path.abspath("."), relative_path)
+ 
+#def selt_fund():
+#    import tkinter 
+#    from tkinter import Label
+#    from tkinter import filedialog
+#    from tkinter import Entry
+#    from tkinter import Checkbutton
+#    from tkinter import IntVar
+#    from tkinter import BooleanVar
+#    from tkinter import Button
+#    from tkinter import mainloop
+#    #from tkinter import *
+#    
+# #   def cb(var):
+# #       print(var.get())
+#
+#    coot = tkinter.Toplevel()
+#    
+#    
+#    Label(coot, text="Please select files to drop:", font="Courier 9 bold").grid(row=0, sticky='w')
+#    cf = IntVar()
+#  
+##    print(cf.get())
+#    Checkbutton(coot, text="Cash File",  variable=cf, command=lambda: print(cf.get()),font="Courier 9").grid(row=1, sticky='w')
+#   # print(cf.get())
+#    bo = IntVar()
+#    Checkbutton(coot, text="Batch Optimisation Report", variable=bo,font="Courier 9").grid(row=2, sticky='w')
+#    
+#    trd = IntVar()
+#    Checkbutton(coot, text="Trade List", variable=trd,font="Courier 9").grid(row=3, sticky='w')
+#
+#    Button(coot, text='OK', command=coot.quit).grid(row=4, sticky='w', pady=4)
+#       
+#    
+#    coot.mainloop()
+# #   coot.withdraw()
+#    coot.destroy()
+#    
+#    if (cf.get()==1):
+#       cx=True
+#    else:
+#       cx=False
+#
+#    if (bo.get()==1):
+#        bx=True
+#    else:
+#        bx=False
+#    
+#    if (trd.get()==1):
+#        tx=True
+#    else:
+#        tx=False
+#    del [coot, cf, bo, trd]
+#    return [cx,bx,tx]
 
 #resource_path("c:/IndexTrader/images/index.jpg")
 
@@ -155,10 +210,6 @@ class OMGCS_Index_gui:
         dem.bind("<Button-1>", self.callme)
         
         
-        
-        
-        
-        
        # self.flag=False
         
         
@@ -183,7 +234,7 @@ class OMGCS_Index_gui:
         self.cashforBPM()
         self.lst_lod()
         self.load_trades()
-        
+ #       self.selt_fund()        
  
 # Link the cash flow File
     def callback(self, event):
@@ -318,7 +369,9 @@ class OMGCS_Index_gui:
         lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg" ,fg='SystemButtonFace', bg= 'SystemButtonFace',font=("Helvetica", 10))
         lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
         #lbl.grid(column=2, row=10, rowspan = 1, sticky='ew',padx=5, pady=5)
-
+        
+      #  res=selt_fund()
+        
         b=list_lds()
     #    tkinter.Label(window, text = b).pack()
         self.bytes += 500
