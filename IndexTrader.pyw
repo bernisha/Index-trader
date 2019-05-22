@@ -251,7 +251,7 @@ class OMGCS_Index_gui:
         if not os.path.exists(dest_fold):
             os.makedirs(dest_fold)
         
-        files = [str(path+fil) for fil in ['cash_limits.csv', 'fund_dictionary.csv', 'user_dictionary.csv']]
+        files = [str(path+fil) for fil in ['cash_limits.csv', 'fund_dictionary.csv', 'user_dictionary.csv','comp_mappings.csv']]
         for f in files:
             shutil.copy(f, dest_fold)
         tkinter.messagebox.showinfo("Information",str("Cash Limits, Fund & User attributes files copied to: "+dest_fold))

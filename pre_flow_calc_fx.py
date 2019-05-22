@@ -4,7 +4,7 @@
 Created on Mon Mar 26 13:09:43 2018
 @author: blala
 """
-def pre_flow_calcFx(response,automatic=False,orders=False):
+def pre_flow_calcFx(response,automatic=False,orders=False,testing=False):
     #import future
 
     import sys
@@ -37,7 +37,7 @@ def pre_flow_calcFx(response,automatic=False,orders=False):
     from write_excel import res_indB as res_ind
     from write_excel import fx_dtaB as fx_dta
     
-    testing = True
+   
     if testing:
         response= 'yes'
         automatic = True
@@ -72,7 +72,8 @@ def pre_flow_calcFx(response,automatic=False,orders=False):
         
             #startDate = datetime.today().date()
         startDate = datetime.today()
-        #startDate = datetime.strptime('Sep 15 2017', '%b %d %Y').date()
+        #startDate = datetime.strptime('Sep 15 2017', '%b %d %Y').datetime()
+        #startDate = datetime.today()- timedelta(days=1)
         pd.options.display.max_rows = 200
         #testing=True
         

@@ -755,6 +755,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
             if (str(value_app) in ['Approved',"text:'Approved'"]):
             
                 fund_xls_ex= fund_xls[fund_xls.TradeComment.isin(['Trade at spot','Trade at close'])]
+                fund_xls_ex= fund_xls_ex[fund_xls_ex.TradeSignal.isin([1])]
                 fund_xls_ex=fund_xls_ex.copy()
                 fund_xls_ex['TradeShort']= np.where(fund_xls_ex['Trade'].values=='Sell', 'SOC', 
                                                              np.where(fund_xls_ex['Trade'].values=='Buy', 'BOC', ''))
@@ -1993,12 +1994,22 @@ def cash_flow_validity_fx(cash_flows_eff,newest_cash,startDate,lst_fund, bf=0.00
     
     cash_xlssub=cash_xlssub[['Trade date', 'Portfolio','Type', 'SysFlow']]
     cash_xlssub.columns=['Trade_date','Port_code','Type','SysFlow']
-    cash_xlssub_agg=cash_xlssub.groupby(['Port_code','Type']).agg({'SysFlow':'sum'})
+    #cash_xlssub_agg=cash_xlssub.groupby(['Port_code','Type']).agg({'SysFlow':'sum'})
+    cash_xlssub_agg=cash_xlssub.groupby(['Port_code']).agg({'SysFlow':'sum'})
+    # BL: added logic to group cash flows
+    cash_xlssub_agg['Type']=np.where(cash_xlssub_agg['SysFlow']<0,'CSHWTHD', 
+                                   np.where(cash_xlssub_agg['SysFlow']>0, 'CSHINJ', ''))
+                            
            
     cash_flows_eff['Type']=np.where(cash_flows_eff['Inflow']<0,'CSHWTHD', 
                                    np.where(cash_flows_eff['Inflow']>0, 'CSHINJ', ''))
     
     cash_flows_eff_agg=cash_flows_eff.groupby(['Port_code','Type']).agg({'Inflow':'sum'})
+    #BL: Added logic to group cash flows
+    if len(cash_xlssub_agg)==0:
+        cash_xlssub_agg=cash_xlssub_agg.drop(['Type'],axis=1)
+    else:
+        cash_xlssub_agg=cash_xlssub_agg.groupby(['Port_code','Type']).agg({'SysFlow':'sum'})
     
     csh_tab=pd.concat([cash_xlssub_agg,cash_flows_eff_agg], axis=1)
     csh_tab=csh_tab.reset_index().fillna(0)
