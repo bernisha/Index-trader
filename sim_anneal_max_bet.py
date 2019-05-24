@@ -77,10 +77,13 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,m
 def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer,min_trd_thrs,tdr_typ,fund,exp,min_hldg,nt=100,stp=0.05,ex_bf=0.000001,mx_bet=0.0005):  
     f_cnt=1  
     ooh=sim_annl_fx(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs,tdr_typ,exp,min_hldg,fund,s0=buffer,niter=nt,step=stp,ex_buf=ex_bf)
-    while((f_cnt<7)&(ooh[3]==999)&(ooh[2]>mx_bet)):
+    ooh_aah=ooh[2]
+    while((f_cnt<7)&(ooh[3]==999)&(ooh[2]>mx_bet)&(f_cnt>1)&(abs(ooh_aah-ooh[2])>1e-10)):
         buffer=buffer/2
+        ooh_aah=ooh[2]
         ooh=sim_annl_fx(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs,tdr_typ, exp,min_hldg,fund,s0=buffer,niter=nt,step=stp,ex_buf=ex_bf)
         f_cnt+=1
+        
         print(f_cnt)
     else:
         print('solution found')    
@@ -89,9 +92,9 @@ def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,
     trades['tradesX']=np.where(trades['Sec_code']!='ZAR',np.floor(((trades['part_trade']*trades['tot_fnd_val'])/trades['U_Price']).fillna(0).values),0)
     trades['tradesY']=np.where(trades['Sec_code']=='ZAR', -(((trades['tradesX']*trades['U_Price'])).fillna(0).values).sum(),trades['tradesX'].values )
     trades['fnl_fnd_wgt']=trades['fnd_wgt'].values + ((trades['tradesY']*trades['U_Price'])/trades['tot_fnd_val']).fillna(0).values
-    trades['fnl_fnd_wgt_check']=np.where((trades['fnl_fnd_wgt'].values <0)|(trades['fnl_fnd_wgt'].values<min_hldg),trades['fnd_wgt'].values, trades['fnl_fnd_wgt'].values) # shot-sell
+    trades['fnl_fnd_wgt_check']=np.where((trades['fnl_fnd_wgt'].values <0),0, trades['fnl_fnd_wgt'].values) # shot-sell
     trades['trades']=np.where(trades['Sec_code'].isin(excep_xls), 0, 
-                      np.where(((trades['fnl_fnd_wgt'].values <0)|(trades['fnl_fnd_wgt'].values<min_hldg)),trades['Quantity'].values,  trades['tradesY'].values))  # short sell
+                      np.where(trades['fnl_fnd_wgt'].values<0,np.where(trades.tradesY>0,trades['Quantity'].values,-trades['Quantity'].values),  trades['tradesY'].values))  # short sell
     trades['fnl_act_bet']=((trades['fnl_fnd_wgt_check']-trades['bmk_wgt']).fillna(0)).values
     trades=trades.drop(['tradesX','tradesY','fnl_fnd_wgt'], axis=1)
     trades.rename(columns={'fnl_fnd_wgt_check':'fnl_fndwgt'}, inplace=True)
@@ -99,14 +102,21 @@ def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,
     cnt=str('Trades:'+str(len(trades[trades.trades.abs()>0]))+ ',Buys:'+ str(len(trades[trades.Action=='B']))+ ',Sells:'+str(len(trades[trades.Action=='S'])))
     ooh.pop(6)
 
-#    return [ooh+[cnt]+[trades]]
-    return [ooh+[trades]]
+    return [ooh+[cnt]+[trades]]
+#    return [ooh+[trades]]
 
 z1=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='ALSCPF',exp=True,min_hldg=0.00001,mx_bet=0.0005)
-z2=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0005,min_trd_thrs=0.0005,tdr_typ=2,fund='DSALPC',exp=False,min_hldg=0.0001)
-z3=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=2,fund='UMSMMF',exp=True,min_hldg=0.00001)
-z4=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=1,fund='OMCD01',exp=True,min_hldg=0.00001)
-z5=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=3,fund='UMSWMF',exp=True,min_hldg=0.00001)
+z2=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=1,fund='ALSUPF',exp=True,min_hldg=0.00001,mx_bet=0.0005)
+
+#z2=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0005,min_trd_thrs=0.0005,tdr_typ=2,fund='DSALPC',exp=False,min_hldg=0.0001)
+z3=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='UMSMMF',exp=True,min_hldg=0.00001)
+z4=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='OMALMF',exp=True,min_hldg=0.00001)
+
+
+z5=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='OMCD01',exp=True,min_hldg=0.00001)
+
+#z5=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='UMSWMF',exp=True,min_hldg=0.00001)
+
 z6=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=1,fund='SASEMF',exp=True,min_hldg=0.00001)
 z7=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0001,min_trd_thrs=0.0005,tdr_typ=3,fund='CORPEQ',exp=True,min_hldg=0.00001)
 
