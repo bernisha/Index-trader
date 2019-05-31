@@ -177,7 +177,7 @@ class OMGCS_Index_gui:
         self.text_btnC.grid(column=0, row=9, sticky='ew',padx=5, pady=5)
 
         
-        self.text_btnO = tkinter.Button(self.labelframeB, text = "Drop Post-Opt Files to Folder",wraplength= self.wl, command = self.lst_lod) # create a button to call a function called 'say_hi'
+        self.text_btnO = tkinter.Button(self.labelframeB, text = "Drop BPM Files to Listener",wraplength= self.wl, command = self.lst_lod) # create a button to call a function called 'say_hi'
         self.text_btnO.grid(column=0, row=10, sticky='ew',padx=5, pady=5)
         self.flag= True
 
@@ -250,6 +250,8 @@ class OMGCS_Index_gui:
         dest_fold = 'c:/IndexTrader/required_inputs/'
         if not os.path.exists(dest_fold):
             os.makedirs(dest_fold)
+        if not('c:/data/'):
+            os.makedirs('c:/data/')
         
         files = [str(path+fil) for fil in ['cash_limits.csv', 'fund_dictionary.csv', 'user_dictionary.csv','comp_mappings.csv']]
         for f in files:
@@ -261,7 +263,11 @@ class OMGCS_Index_gui:
     def fut_report(self):
         self.progress["value"] = 0
         #tkinter.messagebox.showinfo("Are flows & cash limits up to date: 1) Yes. 2) No.[Y/N]?:")
+        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg" ,fg='SystemButtonFace', font=("Helvetica", 10), bg='SystemButtonFace')
+        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
+        
         response = tkinter.messagebox.askquestion("Flows", "Are flows & cash limits up to date?")
+        
       #  print(response)
         lbl=tkinter.Label(window, text = "Futures report generated          \n  \n" ,font=("Helvetica", 10), fg='SystemButtonFace', bg='SystemButtonFace')
         lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
@@ -272,6 +278,8 @@ class OMGCS_Index_gui:
               '''simulate reading 500 bytes; update progress bar'''
               self.bytes += 500
               self.progress["value"] = self.bytes
+         #     lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg" ,fg='SystemButtonFace', font=("Helvetica", 10), bg='SystemButtonFace')
+         #     lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
               if self.bytes < self.maxbytes:
             # read more bytes after 100 ms
                  self.after(100, self.fut_report)
@@ -346,7 +354,7 @@ class OMGCS_Index_gui:
     def cashforBPM(self):
         self.progress["value"] = 0
         '''simulate reading 500 bytes; update progress bar'''
-        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg" ,fg='SystemButtonFace', bg= 'SystemButtonFace',font=("Helvetica", 10))
+        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg \n gggggggggggggggggg" ,fg='SystemButtonFace', bg= 'SystemButtonFace',font=("Helvetica", 10))
         lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
         #lbl.grid(column=2, row=10, rowspan = 1, sticky='ew',padx=5, pady=5)
 

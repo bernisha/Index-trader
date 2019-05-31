@@ -159,18 +159,23 @@ def pre_flow_calcFx(response,automatic=False,orders=False,testing=False):
                 
          # Determine list of funds to trade
         lst_fund=sf()
+       
+        
         
         
         # Import cash limits
         cash_lmt_x = pd.read_csv('C:\\IndexTrader\\required_inputs\\cash_limits.csv')
         cash_lmt_x=cash_lmt_x[cash_lmt_x.P_Code.isin(lst_fund)]
         cash_lmt_dict=cash_lmt_x.set_index(['P_Code'])[['Min_EffCash','Max_EffCash']].T.to_dict()
-            
+       
+        
+         
         
         # Import Flows
         #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
         cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
         cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
+       
         
         
          # Import futures
@@ -336,9 +341,15 @@ def pre_flow_calcFx(response,automatic=False,orders=False,testing=False):
             
             cash_flows=cash_flows_eff[['Trade_date', 'Port_code','AssetType1', 'AssetType5', 'AssetType3', 'Sec_code','Sec_type','Close_price', 'Quantity','MarketValue','EffExposure']]
             
+            chx_flw=xx[1]
+        else:
+            chx_flw=pd.DataFrame(columns=['Port_code','Inflow_use','ActFlow'])
         
         dfprt1=dfprt_preflow.append(cash_flows, sort=True)  
         dfprt=dfprt1.drop(['Sec_type'],axis=1)
+        
+        
+        
         
         
         '''Generate cash calc
@@ -506,7 +517,7 @@ def pre_flow_calcFx(response,automatic=False,orders=False,testing=False):
             
             
         
-        bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp)
+        bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw)
         print("\nReport Complete")
         
     else:

@@ -236,14 +236,17 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion , min_t
     ex_ZAR=rank_tab.copy()
     ex_ZAR=ex_ZAR[ex_ZAR.Sec_code!='ZAR']
     
-    if min_trd_thrs > ex_ZAR.act_bet.abs().max():
+    if (min_trd_thrs > ex_ZAR.act_bet.abs().max())&(trade_type!=3):
         buffer = max(buffer,min_trd_thrs-round_down(ex_ZAR.act_bet.abs().max(), 4) )
         print("buffer:"+str(buffer))
     
     # Exclude the illiquid stocks at this point
     if excep:
         ex_ZAR=ex_ZAR[~ex_ZAR.Sec_code.isin(excep_xls)]
-        
+    else:
+        excl_xls={}
+   
+     
     ex_ZAR.loc[:,'use_bet']=np.where(ex_ZAR['act_bet']<0,(ex_ZAR['act_bet']-buffer).values, (ex_ZAR['act_bet']+buffer).values)
     
     if trade_type in [2,3]:
@@ -258,11 +261,12 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion , min_t
         ex_ZAR.loc[:,'neg_bet_buys']=np.where((ex_ZAR['use_bet']<0)&(ex_ZAR['use_bet'].abs() >= min_trd_thrs),ex_ZAR['use_bet'].values,0)
         ex_ZAR.loc[:,'pos_bet_sells_unlmt']=np.where((ex_ZAR['use_bet']>0),ex_ZAR['use_bet'].values,0)
         ex_ZAR.loc[:,'neg_bet_buys_unlmt']=np.where((ex_ZAR['use_bet']<0),ex_ZAR['use_bet'].values,0)
-        ex_ZAR.loc[:,'pos_bet_sells']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.pos_bet_sells.values)
-        ex_ZAR.loc[:,'neg_bet_buys']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.neg_bet_buys.values)
-        ex_ZAR.loc[:,'pos_bet_sells_unlmt']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.pos_bet_sells_unlmt.values)
-        ex_ZAR.loc[:,'neg_bet_buys_unlmt']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.neg_bet_buys_unlmt.values)
-        
+        if excep:
+            ex_ZAR.loc[:,'pos_bet_sells']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.pos_bet_sells.values)
+            ex_ZAR.loc[:,'neg_bet_buys']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.neg_bet_buys.values)
+            ex_ZAR.loc[:,'pos_bet_sells_unlmt']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.pos_bet_sells_unlmt.values)
+            ex_ZAR.loc[:,'neg_bet_buys_unlmt']=np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())),0,ex_ZAR.neg_bet_buys_unlmt.values)
+            
 #        if excep:
 #            ex_ZAR.loc[:,'pos_bet_sells']= np.where(ex_ZAR.Sec_code.isin(list(excl_xls.keys())), 
 #                                              np.where(ex_ZAR.Sec_code.map(lambda x: zxclusion[x][0])<=ex_ZAR.fnd_wgt,ex_ZAR.fnd_wgt.values-ex_ZAR.Sec_code.map(lambda x:zxclusion[x][0]),ex_ZAR.pos_bet_sells.values),
@@ -280,34 +284,36 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion , min_t
                                               np.where(ex_ZAR.Sec_code.map(lambda x: zxclusion[x][0])>ex_ZAR.fnd_wgt,
                                                        ex_ZAR.fnd_wgt.values-ex_ZAR.Sec_code.map(lambda x:zxclusion[x][0]),0),0).sum()
             #net_sell= np.where(abs(pos_bet_excl)>abs(neg_bet_excl), pos_bet_excl-neg_bet_excl
-            
+        else:
+            pos_bet_excl=0 
+            neg_bet_excl=0
         
         if (ZAR_amt>tgt_eff_cash.values)&(eq_trd!=0):
             to_bs=max(abs((ZAR_amt-tgt_eff_cash).values+abs(ex_ZAR['pos_bet_sells'].sum()))+pos_bet_excl-abs(neg_bet_excl), abs(ex_ZAR['neg_bet_buys'].sum()))
             
             if (((ZAR_amt-tgt_eff_cash).values+abs(ex_ZAR['pos_bet_sells'].sum()))+pos_bet_excl-abs(neg_bet_excl)) > abs(ex_ZAR['neg_bet_buys'].sum()):
                 pop_neg_bets=True
-                print('A')
+              #  print('A')
             else:
                 pop_neg_bets=False
-                print('B')
+             #   print('B')
                 
         elif (ZAR_amt < tgt_eff_cash.values)&(eq_trd!=0):
             to_bs=max((abs((ZAR_amt-tgt_eff_cash).values+abs(ex_ZAR['neg_bet_buys'].sum()))+abs(neg_bet_excl)-pos_bet_excl), abs(ex_ZAR['pos_bet_sells'].sum()))
             if abs(((ZAR_amt-tgt_eff_cash).values+abs(ex_ZAR['neg_bet_buys'].sum()))+abs(neg_bet_excl)-pos_bet_excl) > abs(ex_ZAR['pos_bet_sells'].sum()):
                 pop_neg_bets=False
-                print('C')
+            #    print('C')
             else:
                 pop_neg_bets=True
-                print('D')
+           #     print('D')
         else:
-            to_bs=max(abs(ex_ZAR['neg_bet_buys'].sum()), abs(ex_ZAR['pos_bet_sells'].sum()))
-            if (abs(ex_ZAR['pos_bet_sells'].sum()) > abs(ex_ZAR['neg_bet_buys'].sum())):
+            to_bs=max(abs(ex_ZAR['neg_bet_buys'].sum())+abs(neg_bet_excl), abs(ex_ZAR['pos_bet_sells'].sum())+abs(pos_bet_excl))
+            if ((abs(ex_ZAR['pos_bet_sells'].sum())+abs(pos_bet_excl)) > (abs(ex_ZAR['neg_bet_buys'].sum())+abs(neg_bet_excl))):
                 pop_neg_bets=True
-                print('E')
+            #    print('E')
             else:
                 pop_neg_bets=False
-                print('F')
+            #    print('F')
     else:
         pass
     
@@ -435,9 +441,9 @@ def trade_fx( n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion , min_t
     
     return [max_bet,buffer,rank_tab,ex_ZAR]
 
-z1=trade_fx(n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs=0.0005, buffer=0.0005, fnd='ALSCPF', trade_type=3, excep=True)
+#z1=trade_fx(n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs=0.0005, buffer=0.0005, fnd='ALSCPF', trade_type=3, excep=True)
 
-z2=trade_fx(n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs=0.0005, buffer=0.0005, fnd='UMSMMF', trade_type=2)
+#z2=trade_fx(n_comb, dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs=0.0005, buffer=0.0005, fnd='UMSMMF', trade_type=2)
 
 #trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs=0.0005, buffer=0.0005, fnd='DSALPC', trade_type=3)
 

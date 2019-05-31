@@ -11,7 +11,7 @@ import numpy as np
 #trade_fx(n_comb, dfprt_comp_agg_R_B_q, min_trd_thrs, buffer, trade_type=1, fnd='ALSCPF')
 
 
-def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs,tdr_typ,exp, min_hldg,fund, s0, niter=1000, step=0.1, ex_buf=0.00001):
+def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs,tdr_typ,exp, min_hldg,mx_bet,fund, s0, niter=1000, step=0.1, ex_buf=0.00001):
   # Initialize
   ## s stands for state
   ## f stands for function value
@@ -47,7 +47,8 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,m
           fn_list.append(f_n)
  
     # update best state
-      if ((s_n>0)and((f_n < f_b)and(f_n >= (min_hldg-ex_buf))and(f_n < (min_hldg+ex_buf)))and(k<(niter-1))):
+      #if ((s_n>0)and((f_n < f_b)and(f_n >= (mx_bet-ex_buf))and(f_n < (mx_bet+ex_buf)))and(k<(niter-1))):
+      if (((f_n < f_b)or((f_n >= (mx_bet-ex_buf))and(f_n < (mx_bet+ex_buf))))and(k<(niter-1))):
         s_b = s_n
         f_b = f_n
         i_b = k
@@ -61,7 +62,7 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,m
               break
                 
       elif ((k==(niter-1))and(~('s_b' in locals()))):
-          print("Can't find a solution")
+     #     print("Can't find a solution")
           lst=abs(s0-np.array(fn_list))#np.where((buffer-np.array(fn_list))>0,buffer-np.array(fn_list),9)
           s_b = s_list[[i for i,x in enumerate(lst) if x == min(lst)][0]]
           f_b_ = func(n_comb, dfprt_comp_agg_R_B_q,excep_xls, excl_xls, zxclusion,min_trd_thrs, s_b, fnd=fund,trade_type=tdr_typ,excep=exp,min_hold=min_hldg)
@@ -76,7 +77,7 @@ def sim_annl_fx(func,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,m
   
 def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer,min_trd_thrs,tdr_typ,fund,exp,min_hldg,nt=100,stp=0.05,ex_bf=0.000001,mx_bet=0.0005):  
     f_cnt=1  
-    ooh=sim_annl_fx(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs,tdr_typ,exp,min_hldg,fund,s0=buffer,niter=nt,step=stp,ex_buf=ex_bf)
+    ooh=sim_annl_fx(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,min_trd_thrs,tdr_typ,exp,min_hldg,mx_bet,fund,s0=buffer,niter=nt,step=stp,ex_buf=ex_bf)
     ooh_aah=ooh[2]
     while((f_cnt<7)&(ooh[3]==999)&(ooh[2]>mx_bet)&(f_cnt>1)&(abs(ooh_aah-ooh[2])>1e-10)):
         buffer=buffer/2
@@ -104,8 +105,17 @@ def fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,
 
     return [ooh+[cnt]+[trades]]
 #    return [ooh+[trades]]
+    
+for p_cde in n_comb.Port_code:
+    print(p_cde)
+    z1=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund=p_cde,exp=False,min_hldg=0.00001,mx_bet=0.0005)
+    print(z1[0][6])
+    
+
+    
 
 z1=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='ALSCPF',exp=True,min_hldg=0.00001,mx_bet=0.0005)
+
 z2=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=1,fund='ALSUPF',exp=True,min_hldg=0.00001,mx_bet=0.0005)
 
 #z2=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0005,min_trd_thrs=0.0005,tdr_typ=2,fund='DSALPC',exp=False,min_hldg=0.0001)
@@ -117,7 +127,7 @@ z5=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,b
 
 #z5=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='UMSWMF',exp=True,min_hldg=0.00001)
 
-z6=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0003,min_trd_thrs=0.0005,tdr_typ=1,fund='SASEMF',exp=True,min_hldg=0.00001)
+z6=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0000,min_trd_thrs=0.0005,tdr_typ=3,fund='SASEMF',exp=True,min_hldg=0.00001)
 z7=fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,excep_xls,excl_xls, zxclusion,buffer=0.0001,min_trd_thrs=0.0005,tdr_typ=3,fund='CORPEQ',exp=True,min_hldg=0.00001)
 
 fnd_best(trade_fx,n_comb,dfprt_comp_agg_R_B_q,buffer,min_trd_thrs,tdr_typ=2,fund='SASEMF')
