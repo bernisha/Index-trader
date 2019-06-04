@@ -100,7 +100,7 @@ class OMGCS_Index_gui:
         
         self.window = window
         window.geometry("500x610+500+300")
-        window.title("OMCS IndexTrader")
+        window.title("OMCS IndexTrader (1.1)")
         window.resizable(0, 0)
         
         #self.y_pos =0.785
@@ -116,6 +116,10 @@ class OMGCS_Index_gui:
         
         self.label = tkinter.Label(window, text="OMCS INDEXATION TRADING HUB",font=("Courier 14 bold"))
         self.label.place(relx=0.50, rely=0.05, anchor="c")
+        
+        self.labelv = tkinter.Label(window, text="version 1.1",font=("Helvetica 8"),bg='white')
+        self.labelv.place(relx=0.93, rely=0.98, anchor="c")
+        
         
         if getattr(sys, 'frozen', False):
             # we are running in a bundle
@@ -354,7 +358,7 @@ class OMGCS_Index_gui:
     def cashforBPM(self):
         self.progress["value"] = 0
         '''simulate reading 500 bytes; update progress bar'''
-        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg \n gggggggggggggggggg" ,fg='SystemButtonFace', bg= 'SystemButtonFace',font=("Helvetica", 10))
+        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg \n gggggggggggggggggg\n gggggggggggggggggg\n gggggggggggggggggg" ,fg='SystemButtonFace', bg= 'SystemButtonFace',font=("Helvetica", 10))
         lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
         #lbl.grid(column=2, row=10, rowspan = 1, sticky='ew',padx=5, pady=5)
 
@@ -396,7 +400,7 @@ class OMGCS_Index_gui:
        # self.flag= True
         self.progress["value"] = 0
         '''simulate reading 500 bytes; update progress bar'''
-        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg" ,fg='SystemButtonFace', bg='SystemButtonFace', font=("Helvetica", 10))
+        lbl=tkinter.Label(window, text = " \n \n ggggggggggggggggggggggggggg" ,fg='SystemButtonFace', bg='SystemButtonFace', font=("Helvetica", 10))
         lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
         def select_fx():
             global d
