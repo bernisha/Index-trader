@@ -526,7 +526,4 @@ def pre_flow_calcFx(response,automatic=False,orders=False,testing=False):
 #pre_flow_calcFx("yes")
             
            
-         
-                                              
-            
-        
+              

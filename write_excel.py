@@ -798,6 +798,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
 '******************************************************************************************************************************************************************************    
 """
         
+
 def tloader_fmt_equity(selct_on=1):
 
     import sys
@@ -846,222 +847,295 @@ def tloader_fmt_equity(selct_on=1):
     #newest = max(glob.iglob(input_folder+'Trade*.xlsx'), key=os.path.getmtime)
     
     sh='TradeList'
+    unlst_sec = ['JCDLIQ','ZAEHSU','ZAUTRU']
+    chck_shts = ['Post_Trade_Report', 'Active_Bets', 'Raw_Data', 'Sign-Off']
     
     ls = []
     cols = range(0,20)
     for i in cols:
  #       print(i)
         ls.append(i)
-
-
-    messagebox.showinfo('Trade Imports', 'Please select the the APPROVED Post Trade Recon Report you uploading trades for!!' )   
-    root = Tk()
-    root.filenamePT =  filedialog.askopenfilename(initialdir = str(input_folder),title = "Choose your Post Trade Recon file",filetypes = (("all files","*.csv"),("all files","*.*")))
-  #  print (root.filename)
-    root.withdraw()
     
-    if root.filenamePT=='':
-        selct_on=4
-        msg1='Please select approved \n Post Trade Recon file'
-        value_app=''
-        value_date=''
+    print(selct_on)
+    if selct_on>0:
+        messagebox.showinfo('Trade Imports', 'Please select the the APPROVED Post Trade Recon Report you uploading trades for!!' )   
+        root = Tk()
+        root.filenamePT =  filedialog.askopenfilename(initialdir = str(input_folder),title = "Choose your Post Trade Recon file",filetypes = (("all files","*.csv"),("all files","*.*")))
+      #  print (root.filename)
+        root.withdraw()
+        if root.filenamePT=='':
+            selct_on=4
     else:
-        check = xlrd.open_workbook(root.filenamePT)
-        sh='Sheet1'
-        sht_nam=check.sheet_names()    
-        sh_f_c=check.sheet_by_name('Post_Trade_Report')
-        
-        if 'Sign-Off' in sht_nam:
-             print(sht_nam)
-             checksheet = check.sheet_by_name('Sign-Off')
-             if checksheet.nrows > 5:
-                 value_app = checksheet.cell_value(5,0)
-                 value_date = dt.datetime(*xlrd.xldate_as_tuple(checksheet.cell_value(5,2),check.datemode)).date()
-                 fnd_lst=[]
-                 for j in range(3,60,2):
-               #      print(j)
-                     try:
-                         get_fnds=sh_f_c.cell_value(2,j)
-                         fnd_lst.append(get_fnds)
-                     except: 
-                         pass
-                                     
-             else: 
-                 value_app =''
-                 value_date=''
-                 selct_on=4
+        selct_on=0
+    
+    if selct_on==0:
+       #selct_on=4
+       msg1=''
+       value_app=''
+       value_date=''
+    else:
             
-        else:
+        if selct_on==4:
+       #     selct_on=4
+            msg1='Please select approved \n Post Trade Recon file'
             value_app=''
             value_date=''
-            selct_on=4
-            
-    if (value_app!='Approved'):
-        msg1='Please load an\napproved Post\nTrade Recon file'
-        selct_on=4
-       
-    else:
-        if value_date!=startDate.date():
-            msg1='Please load an\n Post Trade Recon file \n with correct date'
-            selct_on=4
         else:
-        
-            if selct_on == 1:
+            check = xlrd.open_workbook(root.filenamePT)
+            sh='Sheet1'
+            sht_nam=check.sheet_names()
+            cr_book=all(f in chck_shts  for f in sht_nam)
             
-                root = Tk()
-                root.filename =  filedialog.askopenfilename(initialdir = str(input_folder+'Equity Trades'),title = "Choose your Equity file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
-          #  print (root.filename)
-                root.withdraw()
+            
+            if cr_book:
                 
-            elif selct_on == 3:
+                sh_f_c=check.sheet_by_name('Post_Trade_Report')
                 
-                root = Tk()
-                root.filename =  filedialog.askopenfilename(initialdir = str(input_folder+'Equity Trades'),title = "Choose your Equity file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
-                #root.withdraw()
-                
-               # root2 = Tk()
-                root.filenameF =  filedialog.askopenfilename(initialdir = str('\\'.join([input_folder])+'FuturesFile'),title = "Choose your Futures file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
-          #  print (root.filename)
-                root.withdraw()
-                
-            elif selct_on == 2:
-                root = Tk()
-                root.filenameF =  filedialog.askopenfilename(initialdir = str('\\'.join([input_folder])+'FuturesFile'),title = "Choose your Futures file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
-               
-            else:
-                msg1='No trades to \n be loaded!'
-                
-            run_job = 1
-            if selct_on == 3:
-                if ((root.filename == '') or (root.filenameF=='')):
-                    msg1="No trades loaded,\n no files selected"
-                    run_job = 0
-            elif selct_on == 1:
-                if root.filename== '':         
-                    msg1="No trades loaded,\n no equity file selected"
-                    run_job = 0
-            elif selct_on == 2:
-                if root.filenameF== '':         
-                    msg1="No trades loaded,\n no futures file selected"
-                    run_job = 0
-            else:
-                print("Run job")
-                
-            if run_job==1:
-                
-                if selct_on in [1,3]:
-                    fund_xls = pd.read_csv(root.filename, skiprows =1, header = 0)
-                    fnd_eq=fund_xls['Initial Portfolio Name'].unique()
-                    y_fund=(all(x in fnd_lst for x in fnd_eq)) # checks if funds in equity trade list is in fund post opt comb recon report
-                elif selct_on==2:
-                    fut=pd.read_csv(root.filenameF, header = None) 
-                    fut_port=fut[1].tolist()
-                    y_fund=(all(x in fnd_lst for x in fut_port)) 
+                if 'Sign-Off' in sht_nam:
+                     print(sht_nam)
+                     checksheet = check.sheet_by_name('Sign-Off')
+                     if checksheet.nrows > 5:
+                         value_app = checksheet.cell_value(5,0)
+                         value_date = dt.datetime(*xlrd.xldate_as_tuple(checksheet.cell_value(5,2),check.datemode)).date()
+                         fnd_lst=[]
+                         for j in range(3,60,2):
+                       #      print(j)
+                             try:
+                                 get_fnds=sh_f_c.cell_value(2,j)
+                                 fnd_lst.append(get_fnds)
+                             except: 
+                                 pass
+                                             
+                     else: 
+                         value_app =''
+                         value_date=''
+                         selct_on=4
                     
-                if y_fund:
+                else:
+                    value_app=''
+                    value_date=''
+                    selct_on=4
+            else:
+                    messagebox.showwarning("Warning","You have selected the incorrect file!!\nPlease try again!")
+                    msg1='Please load \nthe correct file'
+                    value_app=''
+                    value_date=''
+                    selct_on=4
+                
+        if (value_app!='Approved'):
+            msg1='Please load an\napproved Post\nTrade Recon file'
+            selct_on=4
+           
+        else:
+            if value_date!=startDate.date():
+                msg1='Please load an\n Post Trade Recon file \n with correct date'
+                selct_on=4
+            else:
+            
+                if selct_on == 1:
+                
+                    root = Tk()
+                    root.filename =  filedialog.askopenfilename(initialdir = str(input_folder+'Equity Trades'),title = "Choose your Equity file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
+              #  print (root.filename)
+                    root.withdraw()
+                    
+                elif selct_on == 3:
+                    
+                    root = Tk()
+                    root.filename =  filedialog.askopenfilename(initialdir = str(input_folder+'Equity Trades'),title = "Choose your Equity file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
+                    #root.withdraw()
+                    
+                   # root2 = Tk()
+                    root.filenameF =  filedialog.askopenfilename(initialdir = str('\\'.join([input_folder])+'FuturesFile'),title = "Choose your Futures file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
+              #  print (root.filename)
+                    root.withdraw()
+                    
+                elif selct_on == 2:
+                    root = Tk()
+                    root.filenameF =  filedialog.askopenfilename(initialdir = str('\\'.join([input_folder])+'FuturesFile'),title = "Choose your Futures file",filetypes = (("*.csv","*.csv"),("all files","*.*")))
+                   
+                else:
+                    msg1='No trades to \n be loaded!'
+                    
+                run_job = 1
+                if selct_on == 3:
+                    if ((root.filename == '') or (root.filenameF=='')):
+                        msg1="No trades loaded,\n no files selected"
+                        run_job = 0
+                elif selct_on == 1:
+                    if root.filename== '':         
+                        msg1="No trades loaded,\n no equity file selected"
+                        run_job = 0
+                elif selct_on == 2:
+                    if root.filenameF== '':         
+                        msg1="No trades loaded,\n no futures file selected"
+                        run_job = 0
+                else:
+                    print("Run job")
+                    
+                if run_job==1:
                     
                     if selct_on in [1,3]:
-                        #fund_xls['AlpCode']= (fund_xls['Asset ID'])[1:]
-                        fund_xls = fund_xls[fund_xls['Asset ID'] != 'ZAR']
-                        fund_xls.loc[:,'AlpCode'] = fund_xls['Asset ID'].apply(lambda x : x[2:] if x.startswith("ZA") else x)   
-                        fund_xls.loc[:,'TradeShort']= np.where(fund_xls['Trade Type'].values=='SELL', 'S', 
-                                                                     np.where(fund_xls['Trade Type'].values=='BUY', 'B', ''))
-                        fund_xls.loc[:,'Short_sell']=np.where(fund_xls['Final Holdings']<0, 1,0)
-                        
-                        if (fund_xls[fund_xls.Short_sell.isin([1])]).shape[0]==0:
-                            fund_xls=fund_xls.drop(['Short_sell'], axis=1)
-                            fund_xls.loc[:,'BloomCode']= fund_xls['AlpCode'].apply(lambda x: "{}{}".format(x, ' SJ'))
-                        
-                            user_dat=pd.read_excel(user_dta, usecols = ls)
-                            user_dat=user_dat[["!ID","'BB_TICKER","MIN_AVG_VOLUME"]]
-                            user_dat.columns=['ID','BB_Ticker','VOL']
-                            fund_xls=pd.merge(fund_xls, user_dat, left_on=["BloomCode"], right_on=['BB_Ticker'], how="left")
-                            fund_xls.loc[:,"TradeDays"]=np.abs(fund_xls["Trade"].values)/(0.2*fund_xls["VOL"].values)
-                            fund_xls.loc[:,"TradeDays"]=(fund_xls["TradeDays"]).fillna(0)
-                            fund_xls.loc[:,'TradeAction']= np.where(fund_xls['TradeDays'].values<0.3, 'Trade at close', 
-                                                                         np.where(fund_xls['TradeDays'].values < 0.8,'Target close', 
-                                                                                  'Trade in line with market'))
-                        else:    
-                            messagebox.showwarning("Warning","Short-selling shares!!\nPlease check trades!")
-                            msg1='Trades not loaded,\nshort-selling!'
-                            selct_on = 4
-                            run_job =0
-                      #  return msg1
-                        #break
-      #      if run_job ==1:
-                else:
-                    msg1='Please sign-off trades \n you want to load!'
-                    
-                    
-            #     fund_xls_ex= fund_xls.loc[fund_xls['Trade Comment'] == 1]
-            #    fund_xls_ex['Nom']=abs(fund_xls_ex['No. Futures'].values)
-            #    fund_xls_ex=fund_xls_ex[['FutureCode', 'Portfolio Code', 'TradeShort', 'Nom']]
-            #    fund_xls_ex['Instruction']='Rebalance Portfolio'
-            #    fund_xls_ex['MP']='MP'
-            #    fund_xls_ex['Blank']=''
-            #    fund_xls_ex['TradeIns']='Trade at spot'
-                if (((y_fund)&(selct_on==3))|(selct_on==2)): 
-                    fut=pd.read_csv(root.filenameF, header = None) 
-                    fut[6]=''
-                    fut[3]= fut[3].astype(int)
-                    #messagebox.showinfo("Futures","You are trading futures")
-                    
-                    #master = tk.Tk()
-                    coot = tk.Toplevel()
-                    coot.geometry(str("270x"+"110"+"+600+400"))
-                    coot.title('Futures Instruction')
-                          
-                    tk.Label(coot, 
-                             text="Please enter futures trade instruction:", font="Helvetica 10").grid(row=0, pady=5,padx=25)
-                    
-                    e1 = tk.Entry(coot, width=30)
-                    
-                    e1.grid(row=1, column=0, pady=5)
-                    
-                    tk.Button(coot, 
-                              text='OK', 
-                              command=coot.quit).grid(row=2,  column=0, pady=5
-                                                      
-                                                        )
-                    coot.mainloop()
-                    coot.withdraw()
-                    fut[7]=str(e1.get())
-                else:
-                    msg1='Please sign-off trades \n you want to load!'
-                       
-                
-                
-                
-                with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
-              #  with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
-                    #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
-                    if ((selct_on in [1,3])&(y_fund)):
-                        for i in range(0,len(fund_xls)):
-                    #    for i in range(0,10):
-                        #    print(i)
-                            st=fund_xls.values.tolist()[i]
-                            sf=st[11]+','+st[1]+','+st[12]+','+str(int(abs(st[5])))+',''Rebalance Portfolio'+','+'MP'+',,'+st[18]+'\n'
-                            sh=''.join(sf)
-                            #sf=st[0]+','+st[1]+',',st[2]+','+st[4]+','+st[5]+','+st[6]+','+st[7]
-                            fin.write(sh)
-                        if selct_on==3:     
-                            for z in range(0,len(fut)):
-                                ft=','.join(str(e) for e in fut.values.tolist()[z])
-                                fh=ft+'\n'
-                                fin.write(fh)
-                                msg1="Futures and \n equities loaded"
-                        else:
-                            msg1="Equities loaded only"
-                            
+                        fund_xls = pd.read_csv(root.filename, skiprows =1, header = 0)
+                        print(len(fund_xls))
+                        fund_xls = fund_xls.drop_duplicates(['Initial Portfolio Name','Asset ID','Initial Holdings','Trade','Final Holdings','Price','Traded Value','Final Value','Trade Type'],keep='first')
+                        print(len(fund_xls))
+                        fnd_eq=fund_xls['Initial Portfolio Name'].unique().tolist()
+                        fnd_eq=[j for j in fnd_eq if str(j) != 'nan']
+                        y_fund=(all(x in fnd_lst for x in fnd_eq)) # checks if funds in equity trade list is in fund post opt comb recon report
+                        print("pass through here")
+                         
                     elif selct_on==2:
-                            for z in range(0,len(fut)):
-                                ft=','.join(str(e) for e in fut.values.tolist()[z])
-                                fh=ft+'\n'
-                                msg1="Futures loaded only"
-                                fin.write(fh)
+                        fut=pd.read_csv(root.filenameF, header = None) 
+                        fut_port=fut[1].tolist()
+                        y_fund=(all(x in fnd_lst for x in fut_port)) 
+                        
+                    if y_fund:
+                        
+                        if selct_on in [1,3]:
+                            #fund_xls['AlpCode']= (fund_xls['Asset ID'])[1:]
+                            fund_xls = fund_xls[fund_xls['Asset ID'] != 'ZAR']
+                            fund_xls_chc= (fund_xls.drop_duplicates(['Initial Portfolio Name','Asset ID'],keep='first')).shape[0]-fund_xls.shape[0]
+                            if fund_xls_chc==0:
+                                print(fund_xls_chc)
+                                fund_xls.loc[:,'AlpCode'] = fund_xls['Asset ID'].apply(lambda x : x[2:] if x.startswith("ZA") else x)   
+                                fund_xls.loc[:,'TradeShort']= np.where(fund_xls['Trade Type'].values=='SELL', 'S', 
+                                                                             np.where(fund_xls['Trade Type'].values=='BUY', 'B', ''))
+                                fund_xls.loc[:,'Short_sell']=np.where(fund_xls['Final Holdings']<0, 1,0)
+                                
+                                if any(g in fund_xls['Asset ID'].unique() for g in unlst_sec):
+                                    messagebox.showwarning("Warning","Trading unlisted shares!!\nPlease check trades!")
+                                    msg1='Trades not loaded,\n unlisted shares!'
+                                    selct_on = 4
+                                    run_job =0
+                                else:    
+                                    
+                                    if (fund_xls[fund_xls.Short_sell.isin([1])]).shape[0]==0:
+                                        fund_xls=fund_xls.drop(['Short_sell'], axis=1)
+                                        fund_xls.loc[:,'BloomCode']= fund_xls['AlpCode'].apply(lambda x: "{}{}".format(x, ' SJ'))
+                                    
+                                        user_dat=pd.read_excel(user_dta, usecols = ls)
+                                        user_dat=user_dat[["!ID","'BB_TICKER","MIN_AVG_VOLUME"]]
+                                        user_dat.columns=['ID','BB_Ticker','VOL']
+                                        user_dat=user_dat.drop_duplicates(['BB_Ticker'], keep='first')
+                                        fund_xls=pd.merge(fund_xls, user_dat, left_on=["BloomCode"], right_on=['BB_Ticker'], how="left")
+                                        fund_xls.loc[:,"TradeDays"]=np.abs(fund_xls["Trade"].values)/(0.2*fund_xls["VOL"].values)
+                                        fund_xls.loc[:,"TradeDays"]=(fund_xls["TradeDays"]).fillna(0)
+                                        fund_xls.loc[:,'TradeAction']= np.where(fund_xls['TradeDays'].values<0.3, 'Trade at close', 
+                                                                                     np.where(fund_xls['TradeDays'].values < 0.8,'Target close', 
+                                                                                              'Trade in line with market'))
+                                                    #master = tk.Tk()
+                                        inp=messagebox.askyesno("Change trade instruction", "Would you like to enter an alternative trade instruction?\n E.g. Trade at spot 11am; Trade at spot")      
+                                        if inp:                                       
+                                            foot = tk.Toplevel()
+                                            foot.geometry(str("270x"+"110"+"+600+400"))
+                                            foot.title('Equities Trade Instruction')
+                                            
+                                            tk.Label(foot, 
+                                                     text="Please enter equity trade instruction:", font="Helvetica 10").grid(row=0, pady=5,padx=25)
+                                            
+                                            d1 = tk.Entry(foot, width=30)
+                                            
+                                            d1.grid(row=1, column=0, pady=5)
+                                            
+                                            tk.Button(foot, 
+                                                      text='OK', 
+                                                      command=foot.quit).grid(row=2,  column=0, pady=5
+                                                                              
+                                                                                )
+                                            foot.mainloop()
+                                            foot.withdraw()
+                                            fund_xls.loc[:,'TradeAction']=np.where(fund_xls['TradeAction']=='Trade at close', str(d1.get()),fund_xls['TradeAction'].values)
+                                        else:
+                                            pass
+                                    else:    
+                                        messagebox.showwarning("Warning","Short-selling shares!!\nPlease check trades!")
+                                        msg1='Trades not loaded,\nshort-selling!'
+                                        selct_on = 4
+                                        run_job =0
+                            else:
+                                messagebox.showwarning("Warning","Duplicate trades detected, please check!")
+                                msg1='There are duplicate trades! \nPlease check your file!!'
+                                selct_on = 4
+                                run_job =0
+                          #  return msg1
+                            #break
+          #      if run_job ==1:
                     else:
-                        msg1="No load"
-        
+                        messagebox.showwarning("Warning","Please select the correct funds to load!")
+                        msg1='Please select the correct funds \n you want to load!'
+                        selct_on=4
+                        
+                        
+                #     fund_xls_ex= fund_xls.loc[fund_xls['Trade Comment'] == 1]
+                #    fund_xls_ex['Nom']=abs(fund_xls_ex['No. Futures'].values)
+                #    fund_xls_ex=fund_xls_ex[['FutureCode', 'Portfolio Code', 'TradeShort', 'Nom']]
+                #    fund_xls_ex['Instruction']='Rebalance Portfolio'
+                #    fund_xls_ex['MP']='MP'
+                #    fund_xls_ex['Blank']=''
+                #    fund_xls_ex['TradeIns']='Trade at spot'
+                    if (((y_fund)&(selct_on==3))|(selct_on==2)): 
+                        fut=pd.read_csv(root.filenameF, header = None) 
+                        fut[6]=''
+                        fut[3]= fut[3].astype(int)
+                        #messagebox.showinfo("Futures","You are trading futures")
+                        
+                        #master = tk.Tk()
+                        coot = tk.Toplevel()
+                        coot.geometry(str("270x"+"110"+"+600+400"))
+                        coot.title('Futures Instruction')
+                              
+                        tk.Label(coot, 
+                                 text="Please enter futures trade instruction:", font="Helvetica 10").grid(row=0, pady=5,padx=25)
+                        
+                        e1 = tk.Entry(coot, width=30)
+                        
+                        e1.grid(row=1, column=0, pady=5)
+                        
+                        tk.Button(coot, 
+                                  text='OK', 
+                                  command=coot.quit).grid(row=2,  column=0, pady=5
+                                                          
+                                                            )
+                        coot.mainloop()
+                        coot.withdraw()
+                        fut[7]=str(e1.get())
+                    else:
+                        #msg1='Please sign-off trades \n you want to load!'
+                         pass  
+                    
+                    
+                    
+                    with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
+                  #  with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
+                        #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
+                        if ((selct_on in [1,3])&(y_fund)):
+                            for i in range(0,len(fund_xls)):
+                        #    for i in range(0,10):
+                            #    print(i)
+                                st=fund_xls.values.tolist()[i]
+                                sf=st[11]+','+st[1]+','+st[12]+','+str(int(abs(st[5])))+',''Rebalance Portfolio'+','+'MP'+',,'+st[18]+'\n'
+                                sh=''.join(sf)
+                                #sf=st[0]+','+st[1]+',',st[2]+','+st[4]+','+st[5]+','+st[6]+','+st[7]
+                                fin.write(sh)
+                            if selct_on==3:     
+                                for z in range(0,len(fut)):
+                                    ft=','.join(str(e) for e in fut.values.tolist()[z])
+                                    fh=ft+'\n'
+                                    fin.write(fh)
+                                    msg1="Futures and \n equities loaded"
+                            else:
+                                msg1="Equities loaded only"
+                                
+                        elif selct_on==2:
+                                for z in range(0,len(fut)):
+                                    ft=','.join(str(e) for e in fut.values.tolist()[z])
+                                    fh=ft+'\n'
+                                    msg1="Futures loaded only"
+                                    fin.write(fh)
+                        else:
+                            msg1="No load"
+            
         if (msg1=="No load")&(selct_on in [1,2,3]):
             os.remove(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
         
@@ -1941,6 +2015,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     from datetime import datetime, timedelta
     from tkinter import filedialog
     from tkinter import Tk
+    from tkinter import messagebox
     from write_excel import hedge_with_box as hf
 
     lst_fund = sf(False)   
@@ -1955,7 +2030,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
 
     output_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\')
     root = Tk()
-    root.filename =  filedialog.askopenfilename(initialdir = output_folder,title = "choose your file",filetypes = (("jpeg files","*.xlsm"),("all files","*.*")))
+    root.filename =  filedialog.askopenfilename(initialdir = output_folder,title = "Select Batch cash calc file",filetypes = (("jpeg files","*.xlsm"),("all files","*.*")))
     print (root.filename)
     root.withdraw()
     
@@ -1995,84 +2070,97 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         bsm=[]
         fsm=[]
         
-        hg_with=[]
-        for k in range(3, len(lst_fund)*2+2, 2):
-            if ws.Cells(10, k).value=='Hedged Withdrawal':
-                print(k)
-                hg_with.append(ws.Cells(7, k).value)
+        fnd_chck=[]
+        for h in range(3, len(lst_fund)*5+2, 2):
+            #print(h)
+            fnd_chck.append(ws.Cells(7, h).value)
         
-       #pd.DataFrame(columns=['Port_code','Inflow_use','ActFlow'])
+        fnd_chck=[j for j in fnd_chck if j !=None]
+        if  set(lst_fund)==set(fnd_chck):
         
-        chk_fut=hf(hg_with,lst_fund, snd=False)
         
+            hg_with=[]
+            for k in range(3, len(lst_fund)*2+2, 2):
+                if ws.Cells(10, k).value=='Hedged Withdrawal':
+                    print(k)
+                    hg_with.append(ws.Cells(7, k).value)
             
-        
-        with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fin:
-        
-            for j in range(3, len(lst_fund)*2+2, 2):
-        #        print(j)
-                fund = ws.Cells(7, j).value
-                bpm_cash=ws.Cells(80, j).value
-                if chk_fut[fund]==1:
-                    bpm_futures=ws.Cells(28, j).value
-                else:
-                    bpm_futures=ws.Cells(73, j).value
-                fut_code=ws.Cells(16, j).value
-                trd_typ=ws.Cells(81, j).value
-                if trd_typ in ['Trade EQTY' ,'Trade EQTY+FUT','Trade FUT']:
-                  #  print(fut_code)
-                    if fund in fnd_excp:
-                        sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'
-                        sh=''.join(sf)
-                    else:
-                        sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'+fund+','+fut_code+','+str(bpm_futures)+'\n'
-                        sh=''.join(sf)
-                    bsm=bsm+['Trade']    
-                    fin.write(sh)
-                else:
-               #     print(fund)
-                    msg="No cash file generated"
-                    bsm=bsm+[msg]
-        
-        with open(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fut:
+           #pd.DataFrame(columns=['Port_code','Inflow_use','ActFlow'])
             
-            for j in range(3, len(lst_fund)*2+2, 2):
-                fund = ws.Cells(7, j).value
-                fut_code=ws.Cells(16, j).value
-                fut_no=np.abs(ws.Cells(58, j).value)
-                fut_value=ws.Cells(58, j+1).value
-                trd_typ=ws.Cells(81, j).value
-                if trd_typ in ['Trade FUT' ,'Trade EQTY+FUT']:
-                    if fund in fnd_excp:
-                        msg1='No futures file generated'
-                        fsm=fsm+[msg1]
+            chk_fut=hf(hg_with,fnd_chck, snd=False)
+            
+                
+            
+            with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fin:
+            
+                for j in range(3, len(fnd_chck)*2+2, 2):
+            #        print(j)
+                    fund = ws.Cells(7, j).value
+                    bpm_cash=ws.Cells(80, j).value
+                    if chk_fut[fund]==1:
+                        bpm_futures=ws.Cells(28, j).value
                     else:
-                        sf=fut_code+','+fund+','+fut_value+','+str(fut_no)+',''Rebalance Portfolio,MP,,Trade at close\r\n'
-                        sh=''.join(sf)
-                        msg1="Futures file generated"
-                        fsm=fsm+[msg1]
-                        fut.write(sh)
-                else:
-                   #print(fund)
-                   msg1="No futures file generated"
-                   fsm=fsm+[msg1]
-                   #bsm=bsm+[msg]
-        
-        
-        if all([elem == 'No cash file generated' for elem in bsm]):
-            os.remove(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
-            msg=list([msg,str("Did you to enter a trade action?")])
+                        bpm_futures=ws.Cells(73, j).value
+                    fut_code=ws.Cells(16, j).value
+                    trd_typ=ws.Cells(81, j).value
+                    if trd_typ in ['Trade EQTY' ,'Trade EQTY+FUT','Trade FUT']:
+                      #  print(fut_code)
+                        if fund in fnd_excp:
+                            sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'
+                            sh=''.join(sf)
+                        else:
+                            sf=fund+',ZAR,'+str(np.round(bpm_cash,15))+'\n'+fund+','+fut_code+','+str(bpm_futures)+'\n'
+                            sh=''.join(sf)
+                        bsm=bsm+['Trade']    
+                        fin.write(sh)
+                    else:
+                   #     print(fund)
+                        msg="No cash file generated"
+                        bsm=bsm+[msg]
+            
+            with open(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fut:
+                
+                for j in range(3, len(fnd_chck)*2+2, 2):
+                    fund = ws.Cells(7, j).value
+                    fut_code=ws.Cells(16, j).value
+                    fut_no=np.abs(ws.Cells(58, j).value)
+                    fut_value=ws.Cells(58, j+1).value
+                    trd_typ=ws.Cells(81, j).value
+                    if trd_typ in ['Trade FUT' ,'Trade EQTY+FUT']:
+                        if fund in fnd_excp:
+                            msg1='No futures file generated'
+                            fsm=fsm+[msg1]
+                        else:
+                            sf=fut_code+','+fund+','+fut_value+','+str(fut_no)+',''Rebalance Portfolio,MP,,Trade at close\n'
+                            sh=''.join(sf)
+                            msg1="Futures file generated"
+                            fsm=fsm+[msg1]
+                            fut.write(sh)
+                    else:
+                       #print(fund)
+                       msg1="No futures file generated"
+                       fsm=fsm+[msg1]
+                       #bsm=bsm+[msg]
+            
+            
+            if all([elem == 'No cash file generated' for elem in bsm]):
+                os.remove(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
+                msg=list([msg,str("Did you to enter a trade action?")])
+            else:
+                msg=["BPM Cash File created"]
+                os.startfile(dirtooutput_file)  
+           
+            if all([elem == 'No futures file generated' for elem in fsm]):
+                os.remove(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
+                msg1=list([msg1])
+            else:
+                msg1=["Futures file generated"]
+                #os.startfile(dirtooutput_file)  
         else:
-            msg=["BPM Cash File created"]
-            os.startfile(dirtooutput_file)  
-       
-        if all([elem == 'No futures file generated' for elem in fsm]):
-            os.remove(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
-            msg1=list([msg1])
-        else:
-            msg1=["Futures file generated"]
-            #os.startfile(dirtooutput_file)  
-       
+            messagebox.showerror('Fund mismatch', 'Please note mismatch in funds selected.\nCheck that your Flows file matches the Batch cash calc file')
+            msg=['Please check']
+            msg1=['funds selected']
+        
         wb.Close(False)
         del xl
     return '\r\n'.join(list(set(msg+msg1)))
