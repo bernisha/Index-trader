@@ -12,7 +12,6 @@ import tkinter.messagebox
 from tkinter import ttk
 import webbrowser
 import shutil
-
 #import sys
 #import tkinter
 #import tkinter.messagebox
@@ -414,19 +413,23 @@ class OMGCS_Index_gui:
 #                print("y")
 #            else:
 #                print("n")
+            
+     
             d=tloader_equity_or_fut(selection)
             print(d)
             lbl=tkinter.Label(window, text = d,fg='green', font=("Helvetica", 10), bg='white')
             lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
+            if selection >0:
+                self.bytes += 500
+                self.progress["value"] = self.bytes
+                if self.bytes < self.maxbytes:
+        # read more bytes after 100 ms
+                     self.after(100, self.tloader_equity_or_fut, True)
              
           #  return d 
        
     #    tkinter.Label(window, text = b).pack()
-        self.bytes += 500
-        self.progress["value"] = self.bytes
-        if self.bytes < self.maxbytes:
-    # read more bytes after 100 ms
-             self.after(100, self.tloader_equity_or_fut, True)
+        
         var = tkinter.IntVar()
        # if self.flag:
         st=13
@@ -437,9 +440,11 @@ class OMGCS_Index_gui:
         tkinter.Radiobutton(labelframeC, text = "Futures only", variable = var, value = 2,font=("Helvetica", 8)).grid(column=1, row=st+3)
         tkinter.Radiobutton(labelframeC, text = "Both Equities & Futures", variable = var, value = 3,font=("Helvetica", 8)).grid(column=1, row=st+4,padx=20)
         tkinter.Button(labelframeC, text = "OK", command = select_fx).grid(column=1, row=st+5)
-       # self.flag=False
+       
+        # self.flag=False
       #  else:
            # self.after(100, self.tloader_equity_or_fut, False)
+             
         print(self.flag)
         #return self.flag
         #print(kgl)

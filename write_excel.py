@@ -818,6 +818,8 @@ def tloader_fmt_equity(selct_on=1):
     from tkinter import messagebox
     import tkinter as tk
     
+   
+    from write_excel import cash_fx_pre_trd_comp as cash_fx_pre_trd_comp
     
     
     startDate = datetime.today()
@@ -826,12 +828,16 @@ def tloader_fmt_equity(selct_on=1):
     folder_mth = datetime.strftime(startDate, "%m")
     folder_day = datetime.strftime(startDate, "%d")
     
+    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+    dic_users=user_dict.set_index(['username']).T.to_dict('list')
+        
+    
         
     dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
     user_dta='\\\\za.investment.int\\dfs\\dbshared\\OMGxT\\Aegis\\UserData.xls'
     
     #output_folder='\\'.join([dirtooutput_file ,folder_yr, folder_mth])
-    input_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\')
+    input_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\'+dic_users[os.environ.get("USERNAME").lower()][1]+'\\')
    # input_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day]))
     
     
@@ -997,11 +1003,14 @@ def tloader_fmt_equity(selct_on=1):
                             fund_xls = fund_xls[fund_xls['Asset ID'] != 'ZAR']
                             fund_xls_chc= (fund_xls.drop_duplicates(['Initial Portfolio Name','Asset ID'],keep='first')).shape[0]-fund_xls.shape[0]
                             if fund_xls_chc==0:
-                                print(fund_xls_chc)
+                                #print(fund_xls_chc)
                                 fund_xls.loc[:,'AlpCode'] = fund_xls['Asset ID'].apply(lambda x : x[2:] if x.startswith("ZA") else x)   
                                 fund_xls.loc[:,'TradeShort']= np.where(fund_xls['Trade Type'].values=='SELL', 'S', 
                                                                              np.where(fund_xls['Trade Type'].values=='BUY', 'B', ''))
                                 fund_xls.loc[:,'Short_sell']=np.where(fund_xls['Final Holdings']<0, 1,0)
+                                kk=fund_xls.groupby(['Initial Portfolio Name']).agg({'Traded Value':'sum'}).reset_index()
+                                
+        
                                 
                                 if any(g in fund_xls['Asset ID'].unique() for g in unlst_sec):
                                     messagebox.showwarning("Warning","Trading unlisted shares!!\nPlease check trades!")
@@ -1024,30 +1033,53 @@ def tloader_fmt_equity(selct_on=1):
                                         fund_xls.loc[:,'TradeAction']= np.where(fund_xls['TradeDays'].values<0.3, 'Trade at close', 
                                                                                      np.where(fund_xls['TradeDays'].values < 0.8,'Target close', 
                                                                                               'Trade in line with market'))
-                                                    #master = tk.Tk()
-                                        inp=messagebox.askyesno("Change trade instruction", "Would you like to enter an alternative trade instruction?\n E.g. Trade at spot 11am; Trade at spot")      
-                                        if inp:                                       
-                                            foot = tk.Toplevel()
-                                            foot.geometry(str("270x"+"110"+"+600+400"))
-                                            foot.title('Equities Trade Instruction')
-                                            
-                                            tk.Label(foot, 
-                                                     text="Please enter equity trade instruction:", font="Helvetica 10").grid(row=0, pady=5,padx=25)
-                                            
-                                            d1 = tk.Entry(foot, width=30)
-                                            
-                                            d1.grid(row=1, column=0, pady=5)
-                                            
-                                            tk.Button(foot, 
-                                                      text='OK', 
-                                                      command=foot.quit).grid(row=2,  column=0, pady=5
-                                                                              
-                                                                                )
-                                            foot.mainloop()
-                                            foot.withdraw()
-                                            fund_xls.loc[:,'TradeAction']=np.where(fund_xls['TradeAction']=='Trade at close', str(d1.get()),fund_xls['TradeAction'].values)
+                                        
+                                        all_dt=cash_fx_pre_trd_comp(fnds_to_use=fnd_eq,response='yes',orders=False,testing=False)
+                                        all_dt=pd.merge(all_dt,kk, left_on=['Port_code'] ,right_on=['Initial Portfolio Name'], how='right')
+                                        all_dt.loc[:,'CashBal']=all_dt['Settled_cash'].values-all_dt['Traded Value'].values
+                                        ldt_cf=[]
+                                        for f_d in fnd_eq:
+                                            val_ =all_dt[all_dt.Port_code==f_d].CashBal.values[0]
+                                            if val_ <0:
+                                                ldt_cf.append(str(f_d+':'+' Neg Cash Bal: '+str('R {:10,.2f}'.format(val_))))
+                                            else:
+                                                pass
+                                        if len(ldt_cf)>0:
+                                           inp1=messagebox.askyesno('Warning (Overdraft):', str('Please note following funds will go into overdraft: \n'+'\n'.join(map(str, ldt_cf))+'\nWould you like to continue?' ) ) 
                                         else:
-                                            pass
+                                            inp1=True
+                                        if inp1==False:
+                                           messagebox.showinfo('Warning (Overdraft):', str('Please note you have terminated Trade laod process!!') )
+                                           msg1='Trades not loaded,\n due to overdraft!'
+                                           selct_on = 4
+                                           run_job =0
+                                            
+                                        else:
+                                           
+                                            inp=messagebox.askyesno("Change trade instruction", "Would you like to enter an alternative trade instruction?\n E.g. Trade at spot 11am; Trade at spot")      
+                                            
+                                            if inp:                                       
+                                                foot = tk.Toplevel()
+                                                foot.geometry(str("270x"+"110"+"+600+400"))
+                                                foot.title('Equities Trade Instruction')
+                                                
+                                                tk.Label(foot, 
+                                                         text="Please enter equity trade instruction:", font="Helvetica 10").grid(row=0, pady=5,padx=25)
+                                                
+                                                d1 = tk.Entry(foot, width=30)
+                                                
+                                                d1.grid(row=1, column=0, pady=5)
+                                                
+                                                tk.Button(foot, 
+                                                          text='OK', 
+                                                          command=foot.quit).grid(row=2,  column=0, pady=5
+                                                                                  
+                                                                                    )
+                                                foot.mainloop()
+                                                foot.withdraw()
+                                                fund_xls.loc[:,'TradeAction']=np.where(fund_xls['TradeAction']=='Trade at close', str(d1.get()),fund_xls['TradeAction'].values)
+                                            else:
+                                                pass
                                     else:    
                                         messagebox.showwarning("Warning","Short-selling shares!!\nPlease check trades!")
                                         msg1='Trades not loaded,\nshort-selling!'
@@ -1156,6 +1188,268 @@ def select_fund(struc=True):
     if struc:
         get_funds = list(set(get_funds + ['CORPEQ'])) # Add corpeq to get the underlyng aset classifications    
     return get_funds
+
+
+
+"""    
+'******************************************************************************************************************************************************************************    
+'                                                                   Check cash pre-trade compliance
+'******************************************************************************************************************************************************************************    
+"""
+
+#def cash_fx_pre_trd_comp(lst_funds, csh_flow):
+
+def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testing=False):
+    #import future
+
+    import sys
+    #sys.path.append('C:\Program Files (x86)\WinPython\python-3.6.5.amd64\lib\site-packages\IPython\extensions')
+    #sys.path.append('C:\Program Files (x86)\WinPython\settings\.ipython')
+    
+    #for p in sys.path:
+    #    print(p)
+    
+    import numpy as np
+    
+    import pandas as pd
+    import time as tm
+    import datetime as dt
+    from datetime import datetime, timedelta
+    import glob
+    import os
+    #from pydatastream import Datastream
+    #from business_calendar import Calendar, MO, TU, WE, TH, FR
+    import pyodbc
+    #from write_excel import excel_fx as exl_rep
+    #from write_excel import input_fx as inp
+    from write_excel import select_fund as sf
+    from write_excel import CashFlowFlag as cff
+    from write_excel import trade_calc as t_c
+    from write_excel import trade_calc_automatic as t_c_a
+    from write_excel import bulk_cash_excel_report as bcer
+    from write_excel import cash_flow_validity_fx as cfvf
+    from write_excel import assetClassB as assetClass
+    from write_excel import res_indB as res_ind
+    from write_excel import fx_dtaB as fx_dta
+    
+    from bdateutil import isbday
+    import bdateutil as bdut
+    import holidays as hol        
+    
+    run_time = tm.time()
+    if testing:
+        response= 'yes'
+        #automatic = True
+        orders=False
+        
+    
+    if response:
+        start_time = datetime.now() 
+        
+        np.seterr(divide='ignore', invalid='ignore')
+        
+        """
+        Set parameters for trading
+        """
+        startDate = datetime.today()
+        pd.options.display.max_rows = 200
+        dirtoimport_file='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
+        dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
+        # Map fund and benchmark settings 
+        
+          # Pull in fund dictionary
+        fnd_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\fund_dictionary.csv')
+        dic_om_index=fnd_dict.set_index(['FundCode']).T.to_dict('list')
+            
+            
+        user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+        dic_users=user_dict.set_index(['username']).T.to_dict('list')
+            
+        fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB']
+          
+        override=['SSF DIV']             
+        
+        # Public Holidays
+        pub_holidays = (pd.read_excel("C:\\IndexTrader\\required_inputs\\public_holidays.xlsx"))['pub_holidays'].tolist()
+        #cal = Calendar(holidays=pub_holidays)
+        
+                
+         # Determine list of funds to trade
+        #lst_fund=sf(False)
+        lst_fund=fnds_to_use
+        
+        
+        # Import cash limits
+        cash_lmt_x = pd.read_csv('C:\\IndexTrader\\required_inputs\\cash_limits.csv')
+        cash_lmt_x=cash_lmt_x[cash_lmt_x.P_Code.isin(lst_fund)]
+        cash_lmt_dict=cash_lmt_x.set_index(['P_Code'])[['Min_EffCash','Max_EffCash']].T.to_dict()
+       
+        
+         
+        
+        # Import Flows
+        #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
+        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
+        cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
+       
+        
+        
+         # Import futures
+        fut_flow=pd.merge(cash_lmt_x[['P_Code','Future_Code']], cash_flows_eff[['Port_code','fut_sufx']], how='right', left_on=['P_Code'], right_on=['Port_code'] )
+        fut_flow['Sec_code']= fut_flow[['Future_Code', 'fut_sufx']].apply(lambda x: ''.join(x), axis=1)
+        fut_flow['Sec_code']=np.where(fut_flow.Future_Code=='NoFuture','NoFuture',fut_flow.Sec_code.values)
+            
+  
+                
+        """
+        Fund, Benchmark, Corporate Action data import
+        """
+        #newest = max(glob.iglob(dirtoimport_file+'fund_data/*.xls'), key=os.path.getmtime)
+        newest = max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
+        newest_cash=max(glob.iglob(dirtoimport_cashfile+'*.xls'), key=os.path.getmtime)
+        #str(dirtoimport_file+newest)
+        #newest
+        
+        fund_xls = pd.read_excel(newest,sheet_name=0,converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+        'Inst Type':str, 
+        'Inst Name':str,
+        'ISIN':str,
+        'Instrument':str,
+        'Quote Close':float,
+        'Qty':float,
+        'Market Val':float,
+        'Delta':float,	
+        'Origin':str},
+        )
+
+        fund_xls=fund_xls.drop(['Delta'],axis=1)
+        if orders:
+            pass
+        else:
+            fund_xls=fund_xls[fund_xls.Origin=='POSITION']
+        fund_xls=fund_xls.drop(['Origin'],axis=1)
+        #fund_xls.dtypes
+        
+        fund_xls.columns = ['Port_code','Price_date','Sec_type','Sec_name','Sec_ISIN','Sec_code','Close_price','Quantity','Market_price']
+        fund_xls['Close_price']=pd.to_numeric(fund_xls.Close_price.values, errors='coerce') 
+        fund_xls['Quantity']=pd.to_numeric(fund_xls.Quantity.values, errors='coerce') 
+        fund_xls['Market_price']=pd.to_numeric(fund_xls.Market_price.values, errors='coerce') 
+        
+        fund_obj = fund_xls.select_dtypes(['object'])
+        fund_xls[fund_obj.columns] = fund_obj.apply(lambda x: x.str.strip())
+        
+        
+        df=fund_xls.copy()
+        df=df[(df.Port_code.isin(dic_om_index.keys()))]
+              
+        df.loc[:,'Benchmark_code']=df.Port_code.map(lambda x:dic_om_index[x][1])
+        df.loc[:,'TypeFund']=df.Port_code.map(lambda x:dic_om_index[x][2])
+        
+        df['Trade_date']=startDate
+        df['AssetType1']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[0],axis=1)
+        df['AssetType2']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[1],axis=1)
+        df['AssetType3']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[2],axis=1)
+        df['AssetType4']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[3],axis=1)
+        df['AssetType5']=df.apply(lambda r: (assetClass(r.Sec_type,r.Sec_code, r.Sec_name,r.TypeFund,cash_flows_eff)).split(",")[4],axis=1)
+        df['MarketValue']= np.where(df[['AssetType1']].isin(['B. Futures Exposure','Dividend Exposure']),0, df[['Market_price']])
+        df['EffExposure']= df[['Market_price']]
+        
+        df['Close_price']=np.where((df['AssetType2'].isin(['Index Future']))&(df['Quantity'].values!=0),
+                                                              (df['Market_price'].values/df['Quantity'].values)/10, 
+                                                               df['Close_price'].values)
+        # Futures insert
+        if ~fut_flow.empty:
+            fut_flow = pd.merge(fut_flow[['Port_code','Sec_code']], (df[['Trade_date','AssetType1','AssetType5','AssetType3','Sec_code','Sec_type','Close_price']]).drop_duplicates(['Sec_code']), on=['Sec_code'], how='left').fillna(0)
+            fut_flow['Quantity']=0
+            fut_flow['MarketValue']=0
+            fut_flow['EffExposure']=0
+            fut_flow['Trade_date']=startDate
+            fut_flow=(fut_flow[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Sec_type','Close_price','Quantity','MarketValue','EffExposure']]).copy()
+            fut_flow=fut_flow[~(fut_flow.Sec_code=='NoFuture')]
+           
+        df=df[df.Port_code.isin(lst_fund)]
+                                   
+        dfprt=(df[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code', 'Sec_type','Close_price','Quantity','MarketValue','EffExposure']]).copy()
+        
+        # Remove cash and other non-equity asset classes for multi-asset class
+     #   dfprt['MarketValue']=np.where((dfprt.Port_code.map(lambda x:dic_om_index[x][2])=='M')&(dfprt.AssetType1!='Equity Exposure'), 0, dfprt.MarketValue.values)
+     #   dfprt['EffExposure']=np.where((dfprt.Port_code.map(lambda x:dic_om_index[x][2])=='M')&(dfprt.AssetType1!='Equity Exposure'), 0, dfprt.EffExposure.values)
+        dfprt= dfprt[~((dfprt.AssetType1=='Other')&(dfprt.Port_code.map(lambda x:dic_om_index[x][2])=='M'))]
+        
+        #Remove SSF Dividend Exposure
+        dfprt.loc[:,'EffExposure']=np.where(dfprt[['AssetType5']].isin(override),0, dfprt[['EffExposure']])
+        dfprt=dfprt[~(dfprt.Port_code.isnull())]
+        dfprt=dfprt[~(dfprt.Quantity.isnull())]
+        dfprt_preflow=dfprt.copy()
+        
+        # Add futures structureback               
+            
+        dfprt_preflow=dfprt_preflow.append(fut_flow,sort=True)  
+          
+        
+                    
+        if ~cash_flows_eff.empty:
+            xx=cfvf(cash_flows_eff, newest_cash,startDate, lst_fund,bf=0.005)
+            cash_flows_eff=cash_flows_eff.merge((xx[1])[['Port_code','Inflow_use']], on=['Port_code'], how='left')
+            cash_flows_eff=cash_flows_eff[['Port_code', 'Inflow_use', 'Eff_cash', 'fut_sufx']]
+            cash_flows_eff.columns=['Port_code', 'Inflow', 'Eff_cash', 'fut_sufx']
+            cash_flows_eff['Trade_date']=startDate
+            cash_flows_eff['AssetType1']='A. Total cash'
+            cash_flows_eff['AssetType2']='Settled cash'
+            cash_flows_eff['AssetType3']='Cash flow'
+            cash_flows_eff['AssetType4']='Cash flow'
+            cash_flows_eff['AssetType5']='Cash flow'
+            cash_flows_eff['Sec_code']='ZAR'
+            cash_flows_eff['Sec_type']='VAL'
+            cash_flows_eff['Close_price']=1
+            cash_flows_eff['Quantity']= cash_flows_eff[['Inflow']]
+            cash_flows_eff['MarketValue']= cash_flows_eff[['Inflow']]
+            cash_flows_eff['EffExposure']= cash_flows_eff[['Inflow']]
+            
+            cash_flows=cash_flows_eff[['Trade_date', 'Port_code','AssetType1', 'AssetType5', 'AssetType3', 'Sec_code','Sec_type','Close_price', 'Quantity','MarketValue','EffExposure']]
+            
+            chx_flw=xx[1]
+        else:
+            chx_flw=pd.DataFrame(columns=['Port_code','Inflow_use','ActFlow'])
+        
+        dfprt1=dfprt_preflow.append(cash_flows, sort=True)  
+        dfprt=dfprt1.drop(['Sec_type'],axis=1)
+        
+        print("--- %s seconds ---" % (tm.time() - run_time))
+        
+        xdf= dfprt[dfprt.AssetType3.isin(['Cash on call','Val cash','Cash flow'])]
+        xdf1=xdf
+        xdf=xdf.groupby(['Trade_date','Port_code']).agg({'MarketValue':'sum'}).reset_index()
+        
+        cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
+                             converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
+                                                'Portfolio':str, 'Type':str, 
+                                                'Security name':str,
+                                                'Security Code':str,
+                                                'Quantity':float,
+                                                ' +/-':str,
+                                                'Amount': float},
+                            )
+        xdf.Port_code.unique().tolist()
+        
+        cash_xls=cash_xls[cash_xls.Portfolio.isin(xdf.Port_code.unique().tolist())]
+        cash_xls=cash_xls.copy()
+        cash_xls.loc[:,'Value']=np.where(cash_xls[' +/-']=='-', -1.0*cash_xls['Amount'].values, cash_xls['Amount'].values)
+        cc=cash_xls.groupby(['Settle Date','Portfolio']).agg({'Value':'sum'}).reset_index()
+        
+        #ff=pd.pivot_table(cc, values = 'Value', index=['Portfolio'], columns = 'Settle Date').reset_index()
+        ff=pd.pivot_table(cc, values = 'Value', index=['Settle Date'], columns = 'Portfolio').reset_index()
+        dtes=pd.bdate_range(start=cc['Settle Date'].min() +bdut.relativedelta(bdays=+1, holidays=hol.SouthAfrica()), end=cc['Settle Date'].min() +bdut.relativedelta(bdays=+3, holidays=hol.SouthAfrica()), holidays =hol.SouthAfrica())
+        all_dta=(pd.merge(ff,pd.DataFrame(dtes.tolist(), columns=['Settle Date']), how='right', left_on=['Settle Date'], right_on=['Settle Date'] ).fillna(0))
+        all_dta.iloc[:,1:all_dta.shape[1]]=all_dta.iloc[:,1:all_dta.shape[1]].cumsum()
+        all_dta=all_dta.melt(id_vars=['Settle Date'], value_vars=all_dta.columns[1:],var_name='Portfolio', value_name='Cash')
+        all_dta=all_dta[all_dta['Settle Date']==all_dta['Settle Date'].max()]
+        all_dta=pd.merge(xdf, all_dta, how='left', left_on=['Port_code'], right_on=['Portfolio'])
+        all_dta.loc[:,'Settled_cash']=all_dta['Cash'].values+all_dta['MarketValue'].values
+        all_dta=all_dta[['Port_code','Settled_cash']]
+        
+        return all_dta    
+    
 
 
 """    
@@ -1348,7 +1642,6 @@ def trade_calc_automatic(p,Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash
 '                                                                   Bulk cash calc excel report
 '******************************************************************************************************************************************************************************    
 """
-
 def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw):
     
     import pandas as pd
@@ -1370,8 +1663,13 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     auto_trade=True
  #   output_folder= 'c:/data/'
     
+    output_folder1=str(output_folder+'\\'+dic_users[os.environ.get("USERNAME").lower()][1])
+    if not os.path.exists(output_folder1):
+        os.makedirs(output_folder1)
+        
     
-    output_file = output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsx'
+    print(output_folder1)
+    output_file = output_folder1+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsx'
     st_row = 19
 #    st_it = st_row+1
     
@@ -1497,7 +1795,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
     workbook  = writer.book
     
-    workbook.filename= output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm'
+    workbook.filename= output_folder1+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm'
     #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
     workbook.add_vba_project('//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/code/vbaProject.bin')
     
@@ -1964,7 +2262,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     workbook.close()
     
     
-    mywb = px.load_workbook(output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm', keep_vba=True)
+    mywb = px.load_workbook(output_folder1+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm', keep_vba=True)
     mysheet = mywb.active
     
     border1=Border(right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
@@ -1981,9 +2279,9 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     mysheet.protection.sheet = False
     mysheet.protection.password = 'Flower'
     
-    mywb.save(output_folder+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm') 
+    mywb.save(output_folder1+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm') 
         
-    os.startfile(output_folder)  
+    os.startfile(output_folder1)  
         
     
     #import win32com.client #import Dispatch
@@ -1995,7 +2293,6 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
     time_elapsed = datetime.now() - start_time 
     print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
-    
     
     #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
 """    
@@ -2021,7 +2318,10 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     lst_fund = sf(False)   
     startDate = datetime.today()
    # startDate=startDate.replace(day=28)
-
+   
+    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+    dic_users=user_dict.set_index(['username']).T.to_dict('list')
+   
     #fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB']
     dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
     folder_yr = datetime.strftime(startDate, "%Y")
@@ -2029,6 +2329,12 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     folder_day = datetime.strftime(startDate, "%d")
 
     output_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\')
+   
+    try:
+        output_folder=str(output_folder+dic_users[os.environ.get("USERNAME").lower()][1])
+    except:
+        pass
+   
     root = Tk()
     root.filename =  filedialog.askopenfilename(initialdir = output_folder,title = "Select Batch cash calc file",filetypes = (("jpeg files","*.xlsm"),("all files","*.*")))
     print (root.filename)
@@ -2038,7 +2344,11 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         msg1 = ['No file']
         msg=['selected']
     else:
-            
+        
+        sng = root.filename
+        sng_ = sng.split('/')
+        sng_ = sng_[1:-1]
+        output_folder = str('\\'+'\\'.join(sng_))
      
         dirtooutput_file=str(output_folder+'\\CashFile\\')
         dirtooutput_fileF=str(output_folder+'\\FuturesFile\\')
@@ -2149,7 +2459,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
             else:
                 msg=["BPM Cash File created"]
                 os.startfile(dirtooutput_file)  
-           
+              
             if all([elem == 'No futures file generated' for elem in fsm]):
                 os.remove(str(dirtooutput_fileF+"Futures_"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
                 msg1=list([msg1])
@@ -2364,6 +2674,7 @@ def BPM_output_loads():
     
     user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
     dic_users=user_dict.set_index(['username']).T.to_dict('list')
+    
     IT_folder= '\\\\za.investment.int\\DFS\\SSApps\\FileTransfer\\BPMReconTool\\Listen'
   #  '\\\\za.investment.int\\DFS\\SSApps\\FileTransfer\\BPMReconTool\\Listen'
    
@@ -2386,7 +2697,7 @@ def BPM_output_loads():
     if xyz[0]:
     
         dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
-        cashfile_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\CashFile')
+        cashfile_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\'+dic_users[os.environ.get("USERNAME").lower()][1]+'\\CashFile')
         cash_file=selectfiles(path=cashfile_import_folder)    
         if cash_file=='':
             xyz[0]=False
@@ -2400,7 +2711,7 @@ def BPM_output_loads():
     if xyz[1]:
     
         dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
-        batchopt_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\Batch Optimisation Reports')
+        batchopt_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\'+dic_users[os.environ.get("USERNAME").lower()][1]+'\\Batch Optimisation Reports')
         batchopt_file=selectfiles(choose="Choose your Batch Optimisation file",path=batchopt_import_folder) 
         if batchopt_file=='':
             xyz[1]=False
@@ -2420,7 +2731,7 @@ def BPM_output_loads():
     if  xyz[2]:
     
         dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
-        trdlist_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\Equity Trades')
+        trdlist_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\'+dic_users[os.environ.get("USERNAME").lower()][1]+'\\Equity Trades')
         trd_file=selectfiles(choose="Choose your Trade file", path=trdlist_import_folder)
         if trd_file=='':
             xyz[2]=False
