@@ -847,8 +847,8 @@ def tloader_fmt_equity(selct_on=1):
     dic_users=user_dict.set_index(['username']).T.to_dict('list')
   
     #dirtooutput_file= 'U:\\Production\\In\\'
-    dirtooutput_file='c:\\data\\'
-    #dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
+    #dirtooutput_file='c:\\data\\'
+    dirtooutput_file = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\Production\\In\\'   
     
     #newest = max(glob.iglob(input_folder+'Trade*.xlsx'), key=os.path.getmtime)
     
@@ -887,41 +887,42 @@ def tloader_fmt_equity(selct_on=1):
             value_app=''
             value_date=''
         else:
-            check = xlrd.open_workbook(root.filenamePT)
-            sh='Sheet1'
-            sht_nam=check.sheet_names()
-            cr_book=all(f in chck_shts  for f in sht_nam)
-            
-            
-            if cr_book:
+            try:
+                check = xlrd.open_workbook(root.filenamePT)
+                sh='Sheet1'
+                sht_nam=check.sheet_names()
+                cr_book=all(f in chck_shts  for f in sht_nam)
                 
-                sh_f_c=check.sheet_by_name('Post_Trade_Report')
                 
-                if 'Sign-Off' in sht_nam:
-                     print(sht_nam)
-                     checksheet = check.sheet_by_name('Sign-Off')
-                     if checksheet.nrows > 5:
-                         value_app = checksheet.cell_value(5,0)
-                         value_date = dt.datetime(*xlrd.xldate_as_tuple(checksheet.cell_value(5,2),check.datemode)).date()
-                         fnd_lst=[]
-                         for j in range(3,60,2):
-                       #      print(j)
-                             try:
-                                 get_fnds=sh_f_c.cell_value(2,j)
-                                 fnd_lst.append(get_fnds)
-                             except: 
-                                 pass
-                                             
-                     else: 
-                         value_app =''
-                         value_date=''
-                         selct_on=4
+                if cr_book:
                     
-                else:
-                    value_app=''
-                    value_date=''
-                    selct_on=4
-            else:
+                    sh_f_c=check.sheet_by_name('Post_Trade_Report')
+                    
+                    if 'Sign-Off' in sht_nam:
+                         print(sht_nam)
+                         checksheet = check.sheet_by_name('Sign-Off')
+                         if checksheet.nrows > 5:
+                             value_app = checksheet.cell_value(5,0)
+                             value_date = dt.datetime(*xlrd.xldate_as_tuple(checksheet.cell_value(5,2),check.datemode)).date()
+                             fnd_lst=[]
+                             for j in range(3,60,2):
+                           #      print(j)
+                                 try:
+                                     get_fnds=sh_f_c.cell_value(2,j)
+                                     fnd_lst.append(get_fnds)
+                                 except: 
+                                     pass
+                                                 
+                         else: 
+                             value_app =''
+                             value_date=''
+                             selct_on=4
+                        
+                    else:
+                        value_app=''
+                        value_date=''
+                        selct_on=4
+            except:
                     messagebox.showwarning("Warning","You have selected the incorrect file!!\nPlease try again!")
                     msg1='Please load \nthe correct file'
                     value_app=''
@@ -982,14 +983,27 @@ def tloader_fmt_equity(selct_on=1):
                 if run_job==1:
                     
                     if selct_on in [1,3]:
+                        chck_trdlist=['Date', 'Initial Portfolio Name', 'Asset ID', 'Asset Name','Initial Holdings', 'Trade', 
+                                                'Final Holdings', 'Price', 'Traded Value','Final Value', 'Trade Type']
                         fund_xls = pd.read_csv(root.filename, skiprows =1, header = 0)
-                        print(len(fund_xls))
-                        fund_xls = fund_xls.drop_duplicates(['Initial Portfolio Name','Asset ID','Initial Holdings','Trade','Final Holdings','Price','Traded Value','Final Value','Trade Type'],keep='first')
-                        print(len(fund_xls))
-                        fnd_eq=fund_xls['Initial Portfolio Name'].unique().tolist()
-                        fnd_eq=[j for j in fnd_eq if str(j) != 'nan']
-                        y_fund=(all(x in fnd_lst for x in fnd_eq)) # checks if funds in equity trade list is in fund post opt comb recon report
-                        print("pass through here")
+                        ck_e_cf=all(t_l in chck_trdlist for t_l in fund_xls.columns)
+                        
+                        if ck_e_cf==True:
+                        
+                            print(len(fund_xls))
+                            fund_xls = fund_xls.drop_duplicates(['Initial Portfolio Name','Asset ID','Initial Holdings','Trade','Final Holdings','Price','Traded Value','Final Value','Trade Type'],keep='first')
+                            print(len(fund_xls))
+                            fnd_eq=fund_xls['Initial Portfolio Name'].unique().tolist()
+                            fnd_eq=[j for j in fnd_eq if str(j) != 'nan']
+                            y_fund=(all(x in fnd_lst for x in fnd_eq)) # checks if funds in equity trade list is in fund post opt comb recon report
+                            print("pass through here")
+                        else:
+                            messagebox.showerror("Incorrect Equity Trade File", "You have selected the incorrect file")
+                            msg1="No load,\n Incorrect equity\nfile selected"
+                            selct_on=4
+                            run_job=0
+                            y_fund=False
+                            
                          
                     elif selct_on==2:
                         fut=pd.read_csv(root.filenameF, header = None) 
@@ -1056,7 +1070,7 @@ def tloader_fmt_equity(selct_on=1):
                                             
                                         else:
                                            
-                                            inp=messagebox.askyesno("Change trade instruction", "Would you like to enter an alternative trade instruction?\n E.g. Trade at spot 11am; Trade at spot")      
+                                            inp=messagebox.askyesno("Change equity trade instruction", "Would you like to enter an alternative trade instruction?\n E.g. Trade at spot 11am; Trade at spot")      
                                             
                                             if inp:                                       
                                                 foot = tk.Toplevel()
@@ -1108,35 +1122,60 @@ def tloader_fmt_equity(selct_on=1):
                 #    fund_xls_ex['TradeIns']='Trade at spot'
                     if (((y_fund)&(selct_on==3))|(selct_on==2)): 
                         fut=pd.read_csv(root.filenameF, header = None) 
-                        fut[6]=''
-                        fut[3]= fut[3].astype(int)
-                        #messagebox.showinfo("Futures","You are trading futures")
                         
-                        #master = tk.Tk()
-                        coot = tk.Toplevel()
-                        coot.geometry(str("270x"+"110"+"+600+400"))
-                        coot.title('Futures Instruction')
-                              
-                        tk.Label(coot, 
-                                 text="Please enter futures trade instruction:", font="Helvetica 10").grid(row=0, pady=5,padx=25)
+                        fut_trdlist=['OC', 'MP']
+                        try:
+                            fk_e_cf=all(t_f in fut_trdlist[1] for t_f in fut.iloc[:,5].values[0])&(all(d_f in fut_trdlist[0] for d_f in fut.iloc[:,2].values[0][1:]))
+                        except:
+                            fk_e_cf=False
                         
-                        e1 = tk.Entry(coot, width=30)
+                        if fk_e_cf==True:
+                    
+                            fut[6]=''
+                            fut[3]= fut[3].astype(int)
+                            #messagebox.showinfo("Futures","You are trading futures")
+                            
+                            #master = tk.Tk()
+                            coot = tk.Toplevel()
+                            coot.geometry(str("270x"+"110"+"+600+400"))
+                            coot.title('Futures Instruction')
+                                  
+                            tk.Label(coot, 
+                                     text="Please enter futures trade instruction:", font="Helvetica 10").grid(row=0, pady=5,padx=25)
+                            
+                            e1 = tk.Entry(coot, width=30)
+                            
+                            e1.grid(row=1, column=0, pady=5)
+                            
+                            tk.Button(coot, 
+                                      text='OK', 
+                                      command=coot.quit).grid(row=2,  column=0, pady=5
+                                                              
+                                                                )
+                            coot.mainloop()
+                            coot.withdraw()
+                            fut[7]=str(e1.get())
                         
-                        e1.grid(row=1, column=0, pady=5)
-                        
-                        tk.Button(coot, 
-                                  text='OK', 
-                                  command=coot.quit).grid(row=2,  column=0, pady=5
-                                                          
-                                                            )
-                        coot.mainloop()
-                        coot.withdraw()
-                        fut[7]=str(e1.get())
+                        else:
+                            messagebox.showerror("Incorrect Futures File", "You have selected the incorrect futures file")
+                            msg1="No load,\n Incorrect futures\nfile selected"
+                            selct_on=4
+                            run_job=0
                     else:
                         #msg1='Please sign-off trades \n you want to load!'
                          pass  
                     
                     
+                    if selct_on in [1,2,3]:
+                        p=messagebox.askquestion('Decalog Order Load', "All checks are complete!! Are you sure you want to load orders to Decalog?")
+                        if p=='no':
+                            selct_on=4
+                            messagebox.showinfo('Decalog Order Load', "Order load cancelled.\nNo orders loaded to Decalog!")
+                        else:
+                            pass
+                    else:
+                        p=messagebox.showinfo('Trade Load to Decalog', "Some checks have failed.\nNo trades loaded to Decalog!")
+                        selct_on=4
                     
                     with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
                   #  with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
@@ -1173,6 +1212,7 @@ def tloader_fmt_equity(selct_on=1):
         
         else:
             print("Happy!!")
+        
 
     return msg1
 """    
