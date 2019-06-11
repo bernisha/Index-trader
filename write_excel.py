@@ -1690,7 +1690,7 @@ def trade_calc_automatic(p,Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash
 '                                                                   Bulk cash calc excel report
 '******************************************************************************************************************************************************************************    
 """
-def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw):
+def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw,automatic):
     
     import pandas as pd
     import numpy as np
@@ -1708,7 +1708,10 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
     start_time = datetime.now() 
     
-    auto_trade=True
+    if automatic:
+        auto_trade=True
+    else:
+        auto_trade=False
  #   output_folder= 'c:/data/'
     
     output_folder1=str(output_folder+'\\'+dic_users[os.environ.get("USERNAME").lower()][1])
@@ -1733,7 +1736,8 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     new_flow = n_comb
     inv=(new_flow[['Port_code','fin_teff_cash','fin_tot_cash', 'InvType','CashFlowFlag','Min_EffCash','Max_EffCash','Min_TotalCash','Max_TotalCash']]).set_index('Port_code').T.to_dict('list')
     
-    lst_fund = sf(False)    
+    
+    lst_fund = chx_flw.Port_code.unique()#sf(False)    
     h_w=hf(chx_flw,lst_fund)
     #new.pivot(index=['Port_code','AssetType1'], columns= 'AssetType3', values='EffExposure')
     
@@ -2276,8 +2280,11 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
          worksheet.conditional_format(str(alp[pt_col+1]+str(pt_st+2)), {'type':'cell','criteria': 'not between','minimum':  inv[f][6], 
                                            'maximum':  inv[f][7],
                                            'format':   pt_cell_format_1})
+         if automatic==True: 
+             worksheet.merge_range(str(alp[pt_col]+str(pt_st+17)+":"+alp[pt_col+1]+str(pt_st+17)), "None" ,cell_format6_6)
+         else:
+             worksheet.merge_range(str(alp[pt_col]+str(pt_st+17)+":"+alp[pt_col+1]+str(pt_st+17)), "Trade EQTY" ,cell_format6_6)
          
-         worksheet.merge_range(str(alp[pt_col]+str(pt_st+17)+":"+alp[pt_col+1]+str(pt_st+17)), "None" ,cell_format6_6)
          worksheet.data_validation(str(alp[pt_col]+str(pt_st+17)+":"+alp[pt_col+1]+str(pt_st+17)), {'validate': 'list',
                                             'source': ['Trade EQTY+FUT', 
                                                        'Trade EQTY', 
@@ -2341,7 +2348,8 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
     time_elapsed = datetime.now() - start_time 
     print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
-    
+    msg_1="Batch cash calc \n generated!"
+    return msg_1
     #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
 """    
 '******************************************************************************************************************************************************************************    
@@ -2893,7 +2901,7 @@ def hedge_with_box(chx_flw,lst_fnd, snd=True):
             messagebox.showinfo("Temporary hedge withdrawal", "It appears as if you are temporarily hedging a withdrawal! \n Please select funds to export with current futures position!")
 
         coot = tkinter.Toplevel()
-        coot.geometry(str("300x"+str(hgt)+"+600+400"))
+        coot.geometry(str("300x"+str(hgt)+"+600+450"))
         coot.title('Hedged Withdrawals')
         if snd:
             coot.title('Hedged Withdrawals')

@@ -4,7 +4,7 @@
 Created on Mon Mar 26 13:09:43 2018
 @author: blala
 """
-def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
+def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,clear_cash=True):
     #import future
 
     import sys
@@ -40,8 +40,9 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
    
     if testing:
         response= 'yes'
-        automatic = True
+        automatic = False
         orders=False
+        clear_cash=False
         
     
     if response:
@@ -157,10 +158,16 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
         #cal = Calendar(holidays=pub_holidays)
         
                 
-         # Determine list of funds to trade
-        lst_fund=sf()
-       
+         # Import Flows
+        #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
+        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
         
+         # Determine list of funds to trade
+        lst_fund=cash_flows_eff.Port_code.tolist()
+        #cash_flows_eff =pd.DataFrame(columns=['Port_code','Inflow','Eff_cash','fut_sufx','Trade'])
+        cash_flows_eff.loc[:,'Trade']=1
+        cash_flows_eff.loc[:,'Inflow']=0
+        cash_flows_eff.loc[:,'Eff_cash']=np.NaN
         
         
         # Import cash limits
@@ -170,12 +177,6 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
        
         
          
-        
-        # Import Flows
-        #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
-        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
-        cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
-       
         
         
          # Import futures
@@ -238,8 +239,9 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
         Fund, Benchmark, Corporate Action data import
         """
         #newest = max(glob.iglob(dirtoimport_file+'fund_data/*.xls'), key=os.path.getmtime)
-        newest = max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
-        newest_cash=max(glob.iglob(dirtoimport_cashfile+'*.xls'), key=os.path.getmtime)
+        #newest = max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
+        newest = sorted(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)[-2]
+        newest_cash=sorted(glob.iglob(dirtoimport_cashfile+'*.xls'), key=os.path.getmtime)[-2]
         #str(dirtoimport_file+newest)
         #newest
         
@@ -527,3 +529,4 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
             
            
               
+#pre_flow_calcFx_cc(response='yes',automatic=False,orders=False,testing=False,clear_cash=True)
