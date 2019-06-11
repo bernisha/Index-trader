@@ -12,6 +12,9 @@ import tkinter.messagebox
 from tkinter import ttk
 import webbrowser
 import shutil
+#import bdateutil
+import holidays
+import traceback
 #import sys
 #import tkinter
 #import tkinter.messagebox
@@ -99,7 +102,7 @@ class OMGCS_Index_gui:
         
         self.window = window
         window.geometry("500x610+500+300")
-        window.title("OMCS IndexTrader (1.1)")
+        window.title("OMCS IndexTrader (1.2)")
         window.resizable(0, 0)
         
         #self.y_pos =0.785
@@ -116,7 +119,7 @@ class OMGCS_Index_gui:
         self.label = tkinter.Label(window, text="OMCS INDEXATION TRADING HUB",font=("Courier 14 bold"))
         self.label.place(relx=0.50, rely=0.05, anchor="c")
         
-        self.labelv = tkinter.Label(window, text="version 1.1",font=("Helvetica 8"),bg='white')
+        self.labelv = tkinter.Label(window, text="version 1.2",font=("Helvetica 8"),bg='white')
         self.labelv.place(relx=0.93, rely=0.98, anchor="c")
         
         
@@ -237,7 +240,10 @@ class OMGCS_Index_gui:
         self.cashforBPM()
         self.lst_lod()
         self.load_trades()
- #       self.selt_fund()        
+ 
+
+
+
  
 # Link the cash flow File
     def callback(self, event):
@@ -458,7 +464,16 @@ class OMGCS_Index_gui:
             window.destroy()
             #sys.modules[__name__].__dict__.clear()
             os._exit(00)
-            
+
+def callback_error(self, *args):
+    # Build the error message
+    message = 'Generic error:\n\n'
+    message += traceback.format_exc()
+    
+    # Show the error to the user
+    tkinter.messagebox.showerror('Error', message)
+
+tkinter.Tk.report_callback_exception = callback_error            
 window = tkinter.Tk()
 #window.title("GUI")
 
