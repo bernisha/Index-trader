@@ -13,7 +13,7 @@ from tkinter import ttk
 import webbrowser
 import shutil
 #import bdateutil
-import holidays
+#import holidays
 import traceback
 #import sys
 #import tkinter
@@ -102,7 +102,7 @@ class OMGCS_Index_gui:
         
         self.window = window
         window.geometry("500x610+500+300")
-        window.title("OMCS IndexTrader (1.2)")
+        window.title("OMCS IndexTrader (1.3)")
         window.resizable(0, 0)
         
         #self.y_pos =0.785
@@ -119,7 +119,7 @@ class OMGCS_Index_gui:
         self.label = tkinter.Label(window, text="OMCS INDEXATION TRADING HUB",font=("Courier 14 bold"))
         self.label.place(relx=0.50, rely=0.05, anchor="c")
         
-        self.labelv = tkinter.Label(window, text="version 1.2",font=("Helvetica 8"),bg='white')
+        self.labelv = tkinter.Label(window, text="version 1.3",font=("Helvetica 8"),bg='white')
         self.labelv.place(relx=0.93, rely=0.98, anchor="c")
         
         
@@ -327,7 +327,7 @@ class OMGCS_Index_gui:
     def batch_report(self):
         self.progress["value"] = 0
         #tkinter.messagebox.showinfo("Are flows & cash limits up to date: 1) Yes. 2) No.[Y/N]?:")
-        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg" ,fg='SystemButtonFace', font=("Helvetica", 10), bg='SystemButtonFace')
+        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg \n gggggggggggggggggg\n gggggggggggggggggg\n gggggggggggggggggg" ,fg='SystemButtonFace', font=("Helvetica", 10), bg='SystemButtonFace')
         lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
       #  lbl.grid(column=2, row=9, sticky='ew',padx=5, pady=5)
 
@@ -344,8 +344,8 @@ class OMGCS_Index_gui:
             # read more bytes after 100 ms
                  self.after(100, self.batch_report)
 
-              lbl=tkinter.Label(window, text = "Batch cash calc \n generated!" ,fg='green', font=("Helvetica", 10), bg='white')
-              lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
+           #   lbl=tkinter.Label(window, text = "Batch cash calc \n generated!" ,fg='green', font=("Helvetica", 10), bg='white')
+           #   lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
               #lbl.grid(column=2, row=9, sticky='ew',padx=5, pady=5)
         else:
             lbl=tkinter.Label(window, text = "Please Update Flows",fg='red', font=("Helvetica", 10), bg='white')
@@ -353,7 +353,10 @@ class OMGCS_Index_gui:
             #lbl.grid(column=2, row=9, sticky='ew',padx=5, pady=5)
         if response=='yes':
             # runfile('C:/IndexTrader/code/pre_flow_calc.py', wdir='C:/IndexTrader/code')               
-            batch_calc_fx(response)
+            msg_s=batch_calc_fx(response)
+            print(msg_s)
+            lbl=tkinter.Label(window, text = msg_s ,fg='green', font=("Helvetica", 10), bg='white')
+            lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
             # print("yes")
        
         #tkinter.Label(window, text = "Futures report in progress").pack()
@@ -383,7 +386,7 @@ class OMGCS_Index_gui:
     def lst_lod(self):
         self.progress["value"] = 0
         '''simulate reading 500 bytes; update progress bar'''
-        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg" ,fg='SystemButtonFace', bg= 'SystemButtonFace',font=("Helvetica", 10))
+        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg \n gggggggggggggggggg\n gggggggggggggggggg\n gggggggggggggggggg" ,fg='SystemButtonFace', bg= 'SystemButtonFace',font=("Helvetica", 10))
         lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
         #lbl.grid(column=2, row=10, rowspan = 1, sticky='ew',padx=5, pady=5)
         
@@ -405,7 +408,7 @@ class OMGCS_Index_gui:
        # self.flag= True
         self.progress["value"] = 0
         '''simulate reading 500 bytes; update progress bar'''
-        lbl=tkinter.Label(window, text = " \n \n ggggggggggggggggggggggggggg" ,fg='SystemButtonFace', bg='SystemButtonFace', font=("Helvetica", 10))
+        lbl=tkinter.Label(window, text = " \n \n gggggggggggggggggggggggggg \n gggggggggggggggggg\n gggggggggggggggggg\n gggggggggggggggggg" ,fg='SystemButtonFace', bg='SystemButtonFace', font=("Helvetica", 10))
         lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
         def select_fx():
             global d

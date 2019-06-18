@@ -174,8 +174,9 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
         # Import Flows
         #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
         cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
+        cash_flows_act_name = cash_flows_eff[cash_flows_eff.Trade==1].Port_code
         cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
-       
+        
         
         
          # Import futures
@@ -297,6 +298,10 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
             fut_flow['MarketValue']=0
             fut_flow['EffExposure']=0
             fut_flow['Trade_date']=startDate
+            fut_flow['AssetType1']='B. Futures Exposure'
+            fut_flow['AssetType5']='A. INDEX FUTURES'
+            fut_flow['AssetType3']=fut_flow.Sec_code
+        
             fut_flow=(fut_flow[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Sec_type','Close_price','Quantity','MarketValue','EffExposure']]).copy()
             fut_flow=fut_flow[~(fut_flow.Sec_code=='NoFuture')]
            
@@ -322,7 +327,7 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
         
                     
         if ~cash_flows_eff.empty:
-            xx=cfvf(cash_flows_eff, newest_cash,startDate, lst_fund,bf=0.005)
+            xx=cfvf(cash_flows_eff, newest_cash,startDate, lst_fund,bf=0.01)
             cash_flows_eff=cash_flows_eff.merge((xx[1])[['Port_code','Inflow_use']], on=['Port_code'], how='left')
             cash_flows_eff=cash_flows_eff[['Port_code', 'Inflow_use', 'Eff_cash', 'fut_sufx']]
             cash_flows_eff.columns=['Port_code', 'Inflow', 'Eff_cash', 'fut_sufx']
@@ -341,7 +346,8 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
             
             cash_flows=cash_flows_eff[['Trade_date', 'Port_code','AssetType1', 'AssetType5', 'AssetType3', 'Sec_code','Sec_type','Close_price', 'Quantity','MarketValue','EffExposure']]
             
-            chx_flw=xx[1]
+            chx_flw=(xx[1])
+            chx_flw=chx_flw[chx_flw.Port_code.isin(cash_flows_act_name.tolist())]
         else:
             chx_flw=pd.DataFrame(columns=['Port_code','Inflow_use','ActFlow'])
         
@@ -512,18 +518,20 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
                                                                    r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[4]),axis=1)
             n_comb['eq_trade']=n_comb.apply(lambda r: (t_c_a(r.Port_code,r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
                                                                    r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[5]),axis=1)
-            n_comb.to_hdf(str('c:/data/n_comb_'+str(startDate.date())+'.hdf'),'w', data_columns=True, format='table')
-            dfprt.to_hdf(str('c:/data/df_'+ str(startDate.date())+'.hdf'),'w', data_columns=True,format='table')
+         #   n_comb.to_hdf(str('c:/data/n_comb_'+str(startDate.date())+'.hdf'),'w', data_columns=True, format='table')
+         #   dfprt.to_hdf(str('c:/data/df_'+ str(startDate.date())+'.hdf'),'w', data_columns=True,format='table')
             
             
         
-        bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic)
-        print("\nReport Complete")
-        
+        run_btch=bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic)
+       # print("\nReport Complete")
+        return run_btch
     else:
-        print("Exit")
+       # print("Exit")
+        return "Error in \n creating \n batch" 
         
 #pre_flow_calcFx("yes")
             
            
               
+#pre_flow_calcFx(response='yes',automatic=True,orders=False,testing=False)

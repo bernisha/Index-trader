@@ -299,6 +299,9 @@ def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,
             fut_flow['MarketValue']=0
             fut_flow['EffExposure']=0
             fut_flow['Trade_date']=startDate
+            fut_flow['AssetType1']='B. Futures Exposure'
+            fut_flow['AssetType5']='A. INDEX FUTURES'
+            fut_flow['AssetType3']=fut_flow.Sec_code
             fut_flow=(fut_flow[['Trade_date','Port_code','AssetType1','AssetType5','AssetType3','Sec_code','Sec_type','Close_price','Quantity','MarketValue','EffExposure']]).copy()
             fut_flow=fut_flow[~(fut_flow.Sec_code=='NoFuture')]
            
