@@ -1719,7 +1719,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
         os.makedirs(output_folder1)
         
     
-    print(output_folder1)
+    #print(output_folder1)
     output_file = output_folder1+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsx'
     st_row = 19
 #    st_it = st_row+1
@@ -2347,7 +2347,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     #xl.Application.Run("auto_open")
     
     time_elapsed = datetime.now() - start_time 
-    print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
+    #print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
     msg_1="Batch cash calc \n generated!"
     return msg_1
     #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
@@ -2633,9 +2633,9 @@ def cash_flow_validity_fx(cash_flows_eff,newest_cash,startDate,lst_fund, bf=0.00
             return ['No flow',0,0,0][x]
                 
         
-    csh_tab['ValidCashFlag']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,0.005,0)),axis=1)
-    csh_tab['ActFlow']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,0.005,1)),axis=1)       
-    csh_tab['Inflow_use']= csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,0.005,2)),axis=1)       
+    csh_tab['ValidCashFlag']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,bf,0)),axis=1)
+    csh_tab['ActFlow']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,bf,1)),axis=1)       
+    csh_tab['Inflow_use']= csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,bf,2)),axis=1)       
     
     csh_tab_agg=csh_tab.groupby(['Port_code']).agg({'Inflow_use':'sum','ActFlow':'sum'})
     csh_tab_agg=csh_tab_agg.reset_index()

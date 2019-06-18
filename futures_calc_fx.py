@@ -279,11 +279,17 @@ def fut_calc_func(response,orders=False):
         
          # Futures insert
         if ~fut_flow.empty:
+            #ind_fut=[str((cash_flows_eff['fut_sufx'].values)[0])]
             fut_flow = pd.merge(fut_flow[['Port_code','Sec_code']], (df[['Trade_date','AssetType1','AssetType2','AssetType3','Sec_code','Close_price']]).drop_duplicates(['Sec_code']), on=['Sec_code'], how='left').fillna(0)
             fut_flow['Quantity']=0
             fut_flow['MarketValue']=0
             fut_flow['EffExposure']=0
             fut_flow['Trade_date']=startDate
+            fut_flow['AssetType1']='Futures Exposure'
+
+            fut_flow['AssetType2']='Index Future'
+            fut_flow['AssetType3']=fut_flow.Sec_code
+        
             fut_flow=(fut_flow[['Trade_date','Port_code','AssetType1','AssetType2','AssetType3','Sec_code','Close_price','Quantity','MarketValue','EffExposure']]).copy()
             fut_flow=fut_flow[~(fut_flow.Sec_code=='NoFuture')]
        
