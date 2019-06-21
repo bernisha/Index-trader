@@ -1187,7 +1187,7 @@ def tloader_fmt_equity(selct_on=1):
                         selct_on=4
                     if selct_on in [1,2,3]:
                         with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
-                  #      with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
+                      #  with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
                             #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
                             if ((selct_on in [1,3])&(y_fund)):
                                 for i in range(0,len(fund_xls)):
@@ -1358,7 +1358,7 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testi
             """
             #newest = max(glob.iglob(dirtoimport_file+'fund_data/*.xls'), key=os.path.getmtime)
             newest = max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
-            newest_cash=max(glob.iglob(dirtoimport_cashfile+'*.xls'), key=os.path.getmtime)
+            newest_cash=max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
             #str(dirtoimport_file+newest)
             #newest
             
@@ -1473,16 +1473,34 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testi
             xdf1=xdf
             xdf=xdf.groupby(['Trade_date','Port_code']).agg({'MarketValue':'sum'}).reset_index()
             
-            cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
-                                 converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
-                                                    'Portfolio':str, 'Type':str, 
-                                                    'Security name':str,
-                                                    'Security Code':str,
-                                                    'Quantity':float,
-                                                    ' +/-':str,
-                                                    'Amount': float},
-                                )
+#            cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
+#                                 converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
+#                                                    'Portfolio':str, 'Type':str, 
+#                                                    'Security name':str,
+#                                                    'Security Code':str,
+#                                                    'Quantity':float,
+#                                                    ' +/-':str,
+#                                                    'Amount': float},
+#                                )
+            cash_xls = pd.read_excel(newest_cash,sheet_name='Detail', 
+                             converters={'Portfolio':str,
+                                         'Instrument':str,
+                                         'Currency':str,
+                                         'Type':str,
+                                         'Sign':str,
+                                         'Qty':float,
+                                         'Amt Current': float,
+                                         'Amt Gross': float,
+                                         'Trade Date':pd.to_datetime,
+                                         'Settle Date': pd.to_datetime 
+                                                },
+                            )
+
+            cash_xls.columns = [col.strip()  for col in cash_xls.columns]
+            cash_xls=cash_xls.drop(['Currency','Amt Gross'],axis=1)
+            cash_xls.columns = ['Portfolio','Security Code','Type',' +/-','Quantity','Amount','Trade date',	'Settle Date']
             xdf.Port_code.unique().tolist()
+            
             
             cash_xls=cash_xls[cash_xls.Portfolio.isin(xdf.Port_code.unique().tolist())]
             cash_xls=cash_xls.copy()
@@ -1723,7 +1741,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
         os.makedirs(output_folder1)
         
     
-    #print(output_folder1)
+    print(output_folder1)
     output_file = output_folder1+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsx'
     st_row = 19
 #    st_it = st_row+1
@@ -2351,7 +2369,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     #xl.Application.Run("auto_open")
     
     time_elapsed = datetime.now() - start_time 
-    #print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
+    print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
     msg_1="Batch cash calc \n generated!"
     return msg_1
     #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
@@ -2374,7 +2392,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     from tkinter import Tk
     from tkinter import messagebox
     from write_excel import hedge_with_box as hf
-    import glob 
+    import glob
     import string
 
     lst_fund = sf(False)   
@@ -2396,10 +2414,11 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         output_folder=str(output_folder+dic_users[os.environ.get("USERNAME").lower()][1])
     except:
         pass
-    
+   
     if clear_cash:
         root_file= max(glob.iglob(output_folder+'\\*.xlsm'), key=os.path.getmtime)
         root_file=root_file.replace('\\','/') 
+        
     else:
         root = Tk()
         root.filename =  filedialog.askopenfilename(initialdir = output_folder,title = "Select Batch cash calc file",filetypes = (("jpeg files","*.xlsm"),("all files","*.*")))
@@ -2416,7 +2435,6 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         sng_ = sng.split('/')
         sng_ = sng_[1:-1]
         output_folder = str('\\'+'\\'.join(sng_))
-        print(output_folder)
      
         dirtooutput_file=str(output_folder+'\\CashFile\\')
         dirtooutput_fileF=str(output_folder+'\\FuturesFile\\')
@@ -2449,6 +2467,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         fsm=[]
         
         fnd_chck=[]
+        
         for h in range(3, len(lst_fund)*5+2, 2):
             #print(h)
             fnd_chck.append(ws.Cells(7, h).value)
@@ -2568,31 +2587,36 @@ def cash_flow_validity_fx(cash_flows_eff,newest_cash,startDate,lst_fund, bf=0.00
 #newest=str(dirtoimport_file+'UFMPosCash20190128.xls')
 #startDate=startDate.replace(day=28)
 
-    cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
-                             converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
-                                                'Portfolio':str, 'Type':str, 
-                                                'Security name':str,
-                                                'Security Code':str,
-                                                'Quantity':float,
-                                                ' +/-':str,
-                                                'Amount': float},
+#    cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
+#                             converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
+#                                                'Portfolio':str, 'Type':str, 
+#                                                'Security name':str,
+#                                                'Security Code':str,
+#                                                'Quantity':float,
+#                                                ' +/-':str,
+#                                                'Amount': float},
+#                            )
+
+    cash_xls = pd.read_excel(newest_cash,sheet_name='Detail', 
+                             converters={'Portfolio':str,
+                                         'Instrument':str,
+                                         'Currency':str,
+                                         'Type':str,
+                                         'Sign':str,
+                                         'Qty':float,
+                                         'Amt Current': float,
+                                         'Amt Gross': float,
+                                         'Trade Date':pd.to_datetime,
+                                         'Settle Date': pd.to_datetime 
+                                                },
                             )
 
-#    cash_xls = pd.read_excel(newest, sheet_name='Detail', 
-#                           converters={'Portfolio': str,
-#                                       'Instrument': str,
-#                                       'Currency': str,
-#                                       'Type':str,
-#                                       'Sign':str,
-#                                       'Qty':float,
-#                                       'Amt Current':float,
-#                                       'Amt Gross':float,
-#                                       'Trade date':pd.to_datetime,
-#                                       'Settle Date': pd.to_datetime},)
+
     
     cash_xls.columns = [col.strip()  for col in cash_xls.columns]
-    
-    
+    cash_xls=cash_xls.drop(['Currency','Amt Gross'],axis=1)
+    cash_xls.columns = ['Portfolio','Security Code','Type','+/-','Quantity','Amount','Trade date',	'Settle Date']
+
     
     cash_xlssub = (cash_xls.copy())[((cash_xls.Type.isin(['CSFLOW','CSHOUT','CSHINJ','CSHWTHD']))&(cash_xls.Portfolio.isin(lst_fund))
                                     &(pd.to_datetime(cash_xls['Settle Date'])==pd.to_datetime(startDate.date()))
@@ -2645,9 +2669,9 @@ def cash_flow_validity_fx(cash_flows_eff,newest_cash,startDate,lst_fund, bf=0.00
             return ['No flow',0,0,0][x]
                 
         
-    csh_tab['ValidCashFlag']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,bf,0)),axis=1)
-    csh_tab['ActFlow']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,bf,1)),axis=1)       
-    csh_tab['Inflow_use']= csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,bf,2)),axis=1)       
+    csh_tab['ValidCashFlag']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,0.005,0)),axis=1)
+    csh_tab['ActFlow']=csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,0.005,1)),axis=1)       
+    csh_tab['Inflow_use']= csh_tab.apply(lambda r: (cash_flw_flg(r.Inflow,r.SysFlow,0.005,2)),axis=1)       
     
     csh_tab_agg=csh_tab.groupby(['Port_code']).agg({'Inflow_use':'sum','ActFlow':'sum'})
     csh_tab_agg=csh_tab_agg.reset_index()
@@ -2959,6 +2983,7 @@ def hedge_with_box(chx_flw,lst_fnd, snd=True):
 
 #hhgg=hedge_with_box(chx_flw,lst_fund)
         
+      
 """
 '******************************************************************************************************************************************************************************    
                                                                         Hedged Withdrawal Check box function
@@ -2989,7 +3014,9 @@ def clear_cash_fx_drop():
     else:
         bpm_cashfile=pd.read_csv(cash_file,index_col = None)
         bpm_cashfile.to_csv(str(IT_folder+'\\Cash Holdings\\BPM_Cash'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'),header = 1, index=False)
-        msg='Life drop to listner folder'
-        os.startfile(str(IT_folder+'\\Cash Holdings\\')) 
+        msg='Life drop to listner foldee'
     return msg
+    
+
+
 
