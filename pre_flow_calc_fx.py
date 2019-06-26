@@ -534,4 +534,7 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
             
            
               
-#pre_flow_calcFx(response='yes',automatic=True,orders=False,testing=False)
+        
+if __name__ == "__main__":
+    pre_flow_calcFx(response='yes',automatic=True,orders=False,testing=False)
+    

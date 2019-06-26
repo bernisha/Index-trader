@@ -4,7 +4,17 @@
 Created on Mon Mar 26 13:09:43 2018
 @author: blala
 """
-def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,clear_cash=True):
+def pre_flow_calcFx_cc(config_path,
+                       config_path_cash, 
+                       output_batch,
+                       user_dict,
+                       fnd_dict,
+                       csh_lmt_file,
+                       fnd_excp_list,
+                       vba_bin,
+                       flows='flows.csv',
+                       req_input_direc='C:\\IndexTrader\\required_inputs\\',
+                       response='yes',automatic=True,orders=False,testing=False,clear_cash=True):
     #import future
 
     import sys
@@ -86,13 +96,15 @@ def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,
         # Fund settings
        # dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\'
         #dirtoimport_file= 'H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\'
-        dirtoimport_file='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
-        dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
+        #dirtoimport_file='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
+        dirtoimport_file=config_path
+        dirtoimport_cashfile =config_path_cash
+        #dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
      
         
         # directory to export report to
         #dirtooutput_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Futures Trades'
-        dirtooutput_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+        dirtooutput_file=output_batch
         #output_folder='\\'.join([dirtooutput_file ,folder_yr, folder_mth])
         output_folder=str('\\'.join([dirtooutput_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades')
         
@@ -104,14 +116,15 @@ def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,
         # Map fund and benchmark settings 
         
           # Pull in fund dictionary
-        fnd_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\fund_dictionary.csv')
+        #fnd_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\fund_dictionary.csv')
+        fnd_dict=pd.read_csv(str(req_input_direc+fnd_dict))
         dic_om_index=fnd_dict.set_index(['FundCode']).T.to_dict('list')
             
             
-        user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+        user_dict=pd.read_csv(str(req_input_direc+user_dict))
         dic_users=user_dict.set_index(['username']).T.to_dict('list')
             
-        fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB']
+        fnd_excp= fnd_excp_list
         
         #dic_om_index = {'DRIEQC':['OM Responsible Equity Fund','CSIESG'],
         #'DSWIXC':['SWIX Index Fund','JSESWIXALSICAPPED'],
@@ -154,13 +167,13 @@ def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,
         override=['SSF DIV']             
         
         # Public Holidays
-        pub_holidays = (pd.read_excel("C:\\IndexTrader\\required_inputs\\public_holidays.xlsx"))['pub_holidays'].tolist()
+#        pub_holidays = (pd.read_excel("C:\\IndexTrader\\required_inputs\\public_holidays.xlsx"))['pub_holidays'].tolist()
         #cal = Calendar(holidays=pub_holidays)
         
                 
          # Import Flows
         #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
-        cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
+        cash_flows_eff = pd.read_csv(str(req_input_direc+flows),thousands=',')
         
          # Determine list of funds to trade
         lst_fund=cash_flows_eff.Port_code.tolist()
@@ -171,7 +184,7 @@ def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,
         
         
         # Import cash limits
-        cash_lmt_x = pd.read_csv('C:\\IndexTrader\\required_inputs\\cash_limits.csv')
+        cash_lmt_x = pd.read_csv(str(req_input_direc+csh_lmt_file))
         cash_lmt_x=cash_lmt_x[cash_lmt_x.P_Code.isin(lst_fund)]
         cash_lmt_dict=cash_lmt_x.set_index(['P_Code'])[['Min_EffCash','Max_EffCash']].T.to_dict()
        
@@ -517,12 +530,12 @@ def pre_flow_calcFx_cc(response='yes',automatic=True,orders=False,testing=False,
                                                                    r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[4]),axis=1)
             n_comb['eq_trade']=n_comb.apply(lambda r: (t_c_a(r.Port_code,r.CashFlowFlag, r.Tgt_EffCash1,r.Tgt_TotalCash, r.Future_Code_y,r.Max_EffCash, r.Min_EffCash,r.Ovd_Effcash,
                                                                    r.Effectivecash_p, r.Totalcash_p, r.FundValue_R, r.Close_price, r.FuturesExposure_p, r.ActFlow_p, r.Quantity)[5]),axis=1)
-            n_comb.to_hdf(str('c:/data/n_comb_'+str(startDate.date())+'.hdf'),'w', data_columns=True, format='table')
-            dfprt.to_hdf(str('c:/data/df_'+ str(startDate.date())+'.hdf'),'w', data_columns=True,format='table')
+        #    n_comb.to_hdf(str('c:/data/n_comb_'+str(startDate.date())+'.hdf'),'w', data_columns=True, format='table')
+        #    dfprt.to_hdf(str('c:/data/df_'+ str(startDate.date())+'.hdf'),'w', data_columns=True,format='table')
             
             
         
-        bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic)
+        bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic,vba_bin)
         print("\nReport Complete")
         
     else:
