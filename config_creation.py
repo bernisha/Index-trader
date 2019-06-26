@@ -41,3 +41,7 @@ Config.read("c:\\data\\config.ini")
 Config.sections()
 
 Config.options('section1')[1]
+
+
+Config.get('section1',Config.options('section1')[4])
+Config.get('section0',Config.options('section0')[0])

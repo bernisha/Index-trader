@@ -70,7 +70,7 @@ def assetClassF(Sec_type, ins_code,sec_nam,Type_Fund, cash_flows_eff):
             return str("Futures Exposure,"+"Index Future,"+str(ins_code[0:4]+ind_fut[0])+",Futures Exposure")
     #    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
     #    elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
-        elif Sec_type=='FUTURE : EQUITY':
+        elif (Sec_type=='FUTURE : EQUITY'):
     #        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
             return str("Futures Exposure,"+"SSF,null"+",Futures Exposure")
         elif Sec_type=='EQ : ORDINARY SHARE':
@@ -161,7 +161,7 @@ def assetClassB(Sec_type, ins_code,sec_nam, Type_Fund,cash_flows_eff):
 
 #    elif Sec_type=='FUTURE : EQUITY' and ins_code in(ssf) :
  #    elif Sec_type=='FUTURE : EQUITY' and ins_code[3:4] in(ssf):
-    elif Sec_type=='FUTURE : EQUITY':
+    elif (Sec_type=='FUTURE : EQUITY'):
 #        return str("Futures Exposure,"+"SSF,"+str(ssf[0]))
         return str("B. Futures Exposure,"+"SSF,null"+",Futures Exposure"+",B. SSF")
     elif Sec_type=='EQ : ORDINARY SHARE':
@@ -352,7 +352,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
           'Cash Flow','Totalcash', 'Effectivecash',
           'Tgt_EffCash', 'TradeValue','No. Futures / Price', 'FutureCode','Trade','FundValue', 'EquityExposure', 'Totalcash',
           'FuturesExposure', 'Effectivecash', 'Check cash', 'TradeSignal','TradeComment','Checked by']        
-    lst_fund= sf(False)
+    lst_fund= sf(struc=False)
     
     n_comb_eff_1=n_comb_eff_1[(n_comb_eff_1.index.get_level_values('Port_code').isin(lst_fund))]
     
@@ -1233,9 +1233,9 @@ def tloader_fmt_equity(selct_on=1):
 '******************************************************************************************************************************************************************************    
 """
 
-def select_fund(struc=True):
+def select_fund(struc=True,path_flow='C:\\IndexTrader\\required_inputs\\flows.csv'):
     import pandas as pd
-    get_fund_list = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
+    get_fund_list = pd.read_csv(path_flow,thousands=',')
     get_funds = (get_fund_list[(get_fund_list.Trade==1)])['Port_code'].tolist()
     if struc:
         get_funds = list(set(get_funds + ['CORPEQ'])) # Add corpeq to get the underlyng aset classifications    
@@ -1274,7 +1274,7 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testi
         import pyodbc
         #from write_excel import excel_fx as exl_rep
         #from write_excel import input_fx as inp
-        from write_excel import select_fund as sf
+     #   from write_excel import select_fund as sf
         from write_excel import CashFlowFlag as cff
         from write_excel import trade_calc as t_c
         from write_excel import trade_calc_automatic as t_c_a
@@ -1694,7 +1694,8 @@ def trade_calc_automatic(p,Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash
 '                                                                   Bulk cash calc excel report
 '******************************************************************************************************************************************************************************    
 """
-def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw,automatic):
+def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw,automatic,
+                           vba_bin='//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/code/vbaProject.bin'):
     
     import pandas as pd
     import numpy as np
@@ -1853,7 +1854,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
     workbook.filename= output_folder1+'\\BatchCashCalc_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsm'
     #workbook.add_vba_project('C:/IndexTrader/code/vbaProject.bin')
-    workbook.add_vba_project('//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/code/vbaProject.bin')
+    workbook.add_vba_project(vba_bin)
     
     
     #writer.save()
@@ -2362,7 +2363,9 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
 """
 
 
-def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB'], clear_cash=False):
+def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB'], clear_cash=False,
+                       user_file='C:\\IndexTrader\\required_inputs\\user_dictionary.csv',dir_out='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES',
+                       ):
     
     import win32com.client #import Dispatch
     from write_excel import select_fund as sf
@@ -2377,15 +2380,15 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     import glob 
     import string
 
-    lst_fund = sf(False)   
+    lst_fund = sf(struc=False)   
     startDate = datetime.today()
    # startDate=startDate.replace(day=28)
    
-    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+    user_dict=pd.read_csv(user_file)
     dic_users=user_dict.set_index(['username']).T.to_dict('list')
    
     #fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','OMCM02','PPSBTA','PPSBTB']
-    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
+    dirtoimport_file=dir_out
     folder_yr = datetime.strftime(startDate, "%Y")
     folder_mth = datetime.strftime(startDate, "%m")
     folder_day = datetime.strftime(startDate, "%d")
@@ -2437,10 +2440,6 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         if not os.path.exists(dirtooutput_fileET):
             os.makedirs(dirtooutput_fileET)
        
-        
-        user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
-        dic_users=user_dict.set_index(['username']).T.to_dict('list')
-     
             
         xl = win32com.client.Dispatch("Excel.Application")  # Set up excel
         wb=xl.Workbooks.Open(Filename = root_file)         # Open .xlsm file from step 2A
@@ -2965,7 +2964,7 @@ def hedge_with_box(chx_flw,lst_fnd, snd=True):
 '******************************************************************************************************************************************************************************    
 """
 
-def clear_cash_fx_drop():    
+def clear_cash_fx_drop(dir_imp='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES', lis_fld='\\\\za.investment.int\\DFS\\SSApps\\FileTransfer\\BPMReconTool\\Listen', user_file='C:\\IndexTrader\\required_inputs\\user_dictionary.csv'):    
     
     import datetime as dt
     from datetime import datetime, timedelta
@@ -2973,13 +2972,13 @@ def clear_cash_fx_drop():
     import os
     import glob
     
-    dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES'
-    IT_folder= '\\\\za.investment.int\\DFS\\SSApps\\FileTransfer\\BPMReconTool\\Listen'
+    dirtoimport_file=dir_imp
+    IT_folder= lis_fld
     startDate = datetime.today()
     folder_yr = datetime.strftime(startDate, "%Y")
     folder_mth = datetime.strftime(startDate, "%m")
     folder_day = datetime.strftime(startDate, "%d")
-    user_dict=pd.read_csv('C:\\IndexTrader\\required_inputs\\user_dictionary.csv')
+    user_dict=pd.read_csv(user_file)
     dic_users=user_dict.set_index(['username']).T.to_dict('list')
     
     cashfile_import_folder=str('\\'.join([dirtoimport_file ,folder_yr, folder_mth,folder_day])+'\\BatchTrades\\'+dic_users[os.environ.get("USERNAME").lower()][1]+'\\CashFile')
@@ -2989,7 +2988,7 @@ def clear_cash_fx_drop():
     else:
         bpm_cashfile=pd.read_csv(cash_file,index_col = None)
         bpm_cashfile.to_csv(str(IT_folder+'\\Cash Holdings\\BPM_Cash'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'),header = 1, index=False)
-        msg='Life drop to listner folder'
+        msg='File drop to listner folder'
         os.startfile(str(IT_folder+'\\Cash Holdings\\')) 
     return msg
 
