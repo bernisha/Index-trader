@@ -102,7 +102,7 @@ class OMGCS_Index_gui:
         
         self.window = window
         window.geometry("500x610+500+300")
-        window.title("OMCS IndexTrader (1.3)")
+        window.title("OMCS IndexTrader (1.6)")
         window.resizable(0, 0)
         
         #self.y_pos =0.785
@@ -119,7 +119,7 @@ class OMGCS_Index_gui:
         self.label = tkinter.Label(window, text="OMCS INDEXATION TRADING HUB",font=("Courier 14 bold"))
         self.label.place(relx=0.50, rely=0.05, anchor="c")
         
-        self.labelv = tkinter.Label(window, text="version 1.3",font=("Helvetica 8"),bg='white')
+        self.labelv = tkinter.Label(window, text="version 1.6",font=("Helvetica 8"),bg='white')
         self.labelv.place(relx=0.93, rely=0.98, anchor="c")
         
         
@@ -215,6 +215,8 @@ class OMGCS_Index_gui:
         dem.grid(column=4, row=20,rowspan=1, padx=35, pady=0)
         dem.bind("<Button-1>", self.callme)
         
+        self.text_btn__ = tkinter.Button(window, text = "Load Batch trades into Decalog", wraplength= self.wl,command = self.callmeauto()) # create a button to call a function called 'say_hi'
+      
         
        # self.flag=False
         
@@ -266,6 +268,20 @@ class OMGCS_Index_gui:
         for f in files:
             shutil.copy(f, dest_fold)
         tkinter.messagebox.showinfo("Information",str("Cash Limits, Fund & User attributes files copied to: "+dest_fold))
+        
+    def callmeauto(self):    
+        path = '//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/required_inputs/'
+        dest_fold = 'c:/IndexTrader/required_inputs/'
+        if not os.path.exists(dest_fold):
+            os.makedirs(dest_fold)
+        if not('c:/data/'):
+            os.makedirs('c:/data/')
+        
+        files = [str(path+fil) for fil in ['cash_limits.csv', 'fund_dictionary.csv', 'user_dictionary.csv','comp_mappings.csv']]
+        for f in files:
+            shutil.copy(f, dest_fold)
+        tkinter.messagebox.showinfo("Information",str("Cash Limits, Fund & User attributes files copied to: "+dest_fold))
+        print("Download")
         
         
 # Create the futures report
@@ -426,8 +442,9 @@ class OMGCS_Index_gui:
      
             d=tloader_equity_or_fut(selection)
             print(d)
-            lbl=tkinter.Label(window, text = d,fg='green', font=("Helvetica", 10), bg='white')
-            lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
+            if d!='':
+                lbl=tkinter.Label(window, text = d,fg='green', font=("Helvetica", 10), bg='white')
+                lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
             if selection >0:
                 self.bytes += 500
                 self.progress["value"] = self.bytes
