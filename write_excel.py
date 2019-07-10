@@ -381,6 +381,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     cell_format4 = workbook.add_format({'bold': True, 'bg_color':'#339966', 'font':11, 'locked':False })
     unlocked = workbook.add_format({'locked': False})
     locked = workbook.add_format({'locked': True})
+    cell_format1_1 = workbook.add_format({'bold': False, 'font_color': 'white', 'font':12})
     
     
     worksheet.write_string('A1', 'Indexation Futures Report',cell_format1)
@@ -511,23 +512,31 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
            
     for i in range(1, len(n_comb_eff_1),2):
    #     print(i+6)
-        if n_comb_eff_1['Effectivecash_R'].iloc[i] < n_comb_eff_1['Min_EffCash'].iloc[i]:
+        if n_comb_eff_1['Effectivecash_R'].iloc[i] <= n_comb_eff_1['Min_EffCash'].iloc[i]:
             worksheet.write(i+st_it, 9, n_comb_dta['Effectivecash_R'].iloc[i], format7)
-        elif n_comb_eff_1['Effectivecash_R'].iloc[i] > n_comb_eff_1['Max_EffCash'].iloc[i]:
+        elif n_comb_eff_1['Effectivecash_R'].iloc[i] >= n_comb_eff_1['Max_EffCash'].iloc[i]:
             worksheet.write(i+st_it, 9, n_comb_dta['Effectivecash_R'].iloc[i], format7)
     
-        if n_comb_eff_1['Totalcash_R'].iloc[i] < n_comb_eff_1['Min_TotalCash'].iloc[i]:
+        if n_comb_eff_1['Totalcash_R'].iloc[i] <= n_comb_eff_1['Min_TotalCash'].iloc[i]:
             worksheet.write(i+st_it, 8, n_comb_dta['Totalcash_R'].iloc[i], format7)
             worksheet.write(i+st_it, 17, n_comb_dta['Totalcash_TR'].iloc[i], format7)
-            worksheet.write(i+st_it, 20, n_comb_dta['Check cash'].iloc[i], format6)
-        elif n_comb_eff_1['Totalcash_R'].iloc[i] > n_comb_eff_1['Max_TotalCash'].iloc[i]:
+            if (n_comb_eff_1['Totalcash_R'].iloc[i]!=0):
+                worksheet.write(i+st_it, 20, n_comb_dta['Check cash'].iloc[i], format6)
+            else:
+                worksheet.write(i+st_it, 20, '',cell_format1_1)
+            
+        elif n_comb_eff_1['Totalcash_R'].iloc[i] >= n_comb_eff_1['Max_TotalCash'].iloc[i]:
             worksheet.write(i+st_it, 8, n_comb_dta['Totalcash_R'].iloc[i], format7)
             worksheet.write(i+st_it, 17, n_comb_dta['Totalcash_TR'].iloc[i], format7)
-            worksheet.write(i+st_it, 20, n_comb_dta['Check cash'].iloc[i], format6)
-        
-        if n_comb_eff_1['Effectivecash_TR'].iloc[i] < n_comb_eff_1['Min_EffCash'].iloc[i]:
+           # worksheet.write(i+st_it, 20, n_comb_dta['Check cash'].iloc[i], format6)
+            if (n_comb_eff_1['Totalcash_R'].iloc[i]!=0):
+                worksheet.write(i+st_it, 20, n_comb_dta['Check cash'].iloc[i], format6)
+            else:
+                worksheet.write(i+st_it, 20, '',cell_format1_1)
+            
+        if n_comb_eff_1['Effectivecash_TR'].iloc[i] <= n_comb_eff_1['Min_EffCash'].iloc[i]:
             worksheet.write(i+st_it, 19, n_comb_dta['Effectivecash_TR'].iloc[i], format7)
-        elif n_comb_eff_1['Effectivecash_TR'].iloc[i] > n_comb_eff_1['Max_EffCash'].iloc[i]:
+        elif n_comb_eff_1['Effectivecash_TR'].iloc[i] >= n_comb_eff_1['Max_EffCash'].iloc[i]:
             worksheet.write(i+st_it, 19, n_comb_dta['Effectivecash_TR'].iloc[i], format7)
         else:
             worksheet.write(i+st_it, 19, n_comb_dta['Effectivecash_TR'].iloc[i], format8)
@@ -804,7 +813,7 @@ def tloader_fmt_futures(termi_nate_cnt=5):
 """
         
 
-def tloader_fmt_equity(selct_on=1):
+def tloader_fmt_equity(selct_on=1,SSF_Funds=['CORPEQ','MFEQTY'], SSF_parent=['OMU']):
 
     import sys
     import pandas as pd
@@ -822,8 +831,11 @@ def tloader_fmt_equity(selct_on=1):
     from tkinter import Tk
     from tkinter import messagebox
     import tkinter as tk
+    from tkinter.simpledialog import askstring
+    from tkinter.messagebox import showinfo
     
-   
+    
+    from write_excel import special_fund_load as sp_acc_fnd
     from write_excel import cash_fx_pre_trd_comp as cash_fx_pre_trd_comp
     
     
@@ -1003,6 +1015,7 @@ def tloader_fmt_equity(selct_on=1):
                             fund_xls = fund_xls.drop_duplicates(['Initial Portfolio Name','Asset ID','Initial Holdings','Trade','Final Holdings','Price','Traded Value','Final Value','Trade Type'],keep='first')
                             print(len(fund_xls))
                             fnd_eq=fund_xls['Initial Portfolio Name'].unique().tolist()
+                         #   print(fnd_eq)
                             fnd_eq=[j for j in fnd_eq if str(j) != 'nan']
                             y_fund=(all(x in fnd_lst for x in fnd_eq)) # checks if funds in equity trade list is in fund post opt comb recon report
                             print("pass through here")
@@ -1057,7 +1070,9 @@ def tloader_fmt_equity(selct_on=1):
                                                                                      np.where(fund_xls['TradeDays'].values < 0.8,'Target close', 
                                                                                               'Trade in line with market'))
                                         
-                                        all_dt=cash_fx_pre_trd_comp(fnds_to_use=fnd_eq,response='yes',orders=False,testing=False)
+                                        
+                                        csh_chck=cash_fx_pre_trd_comp(fnds_to_use=fnd_eq,response='yes',orders=True,testing=False)
+                                        all_dt=csh_chck[0]
                                         all_dt=pd.merge(all_dt,kk, left_on=['Port_code'] ,right_on=['Initial Portfolio Name'], how='right')
                                         all_dt.loc[:,'CashBal']=all_dt['Settled_cash'].values-all_dt['Traded Value'].values
                                         ldt_cf=[]
@@ -1071,6 +1086,7 @@ def tloader_fmt_equity(selct_on=1):
                                            inp1=messagebox.askyesno('Warning (Overdraft):', str('Please note following funds will go into overdraft: \n'+'\n'.join(map(str, ldt_cf))+'\nWould you like to continue?' ) ) 
                                         else:
                                             inp1=True
+                                        
                                         if inp1==False:
                                            messagebox.showinfo('Warning (Overdraft):', str('Please note you have terminated Trade laod process!!') )
                                            msg1='Trades not loaded,\n due to overdraft!'
@@ -1103,6 +1119,41 @@ def tloader_fmt_equity(selct_on=1):
                                                 fund_xls.loc[:,'TradeAction']=np.where(fund_xls['TradeAction']=='Trade at close', str(d1.get()),fund_xls['TradeAction'].values)
                                             else:
                                                 pass
+                                            if (any(pd.Series(fund_xls['Initial Portfolio Name'].unique()).isin(SSF_Funds))&(any(pd.Series(fund_xls['AlpCode'].unique()).isin(SSF_parent)))): 
+                                                
+                                                 inp_ssf=messagebox.askyesno("Tradind Single Stock Future", str(str("Would you like to import SSF or underlying share for ")+SSF_parent[0]+str('?\n[Yes] SSF; [No] Share')))      
+                                                 try:
+                                                     fut_suf=csh_chck[1]
+                                                 except:
+                                                     fut_suf = askstring('SSF Details', 'Please enter the SSF Code \ne.g OMUFS19?')
+                                                     showinfo("Load SSF", "You're about to load {}".format(fut_suf))
+                                                     fut_suf = fut_suf[:-3]
+                                                 
+                                                 if inp_ssf:
+                                                     def f(x):
+                                                         return np.int(x)
+                                                     f2 = np.vectorize(f)
+                                                     fund_xls.loc[:,'Trade']=np.where(fund_xls['Initial Portfolio Name'].isin(SSF_Funds), 
+                                                                                        np.where(fund_xls['AlpCode'].isin(SSF_parent), f2(fund_xls['Trade'].values/100),fund_xls['Trade'].values),
+                                                                                        fund_xls['Trade'].values)
+                                                     fund_xls.loc[:,'TradeShort']=np.where(fund_xls['Initial Portfolio Name'].isin(SSF_Funds), 
+                                                                                        np.where(fund_xls['AlpCode'].isin(SSF_parent),(fund_xls.TradeShort+'OC'), fund_xls['TradeShort'].values),
+                                                                                        fund_xls['TradeShort'].values)
+                                                     fund_xls.loc[:,'AlpCode']=np.where(fund_xls['Initial Portfolio Name'].isin(SSF_Funds), 
+                                                                                        np.where(fund_xls['AlpCode'].isin(SSF_parent),(fund_xls.AlpCode+'F'+fut_suf), fund_xls['AlpCode'].values),
+                                                                                        fund_xls['AlpCode'].values)
+                                                     
+                                                 else:
+                                                     pass
+                                            inp_ta=messagebox.askyesno('Trading/Special Accounts:', str('Would you like to load to any trading or special accounts?' ) )  
+                                            
+                                            if inp_ta:
+                                                
+                                                acc_o_load=sp_acc_fnd(fnd_eq,ans=inp_ta, fnd_dir='C:\\IndexTrader\\required_inputs\\', fnd_dict='fund_dictionary.csv')[0]
+                                                fund_xls.loc[:,'Initial Portfolio Name']=fund_xls['Initial Portfolio Name'].map(lambda x:acc_o_load[x])
+                                            else:
+                                                pass
+                                                
                                     else:    
                                         messagebox.showwarning("Warning","Short-selling shares!!\nPlease check trades!")
                                         msg1='Trades not loaded,\nshort-selling!'
@@ -1187,7 +1238,7 @@ def tloader_fmt_equity(selct_on=1):
                         selct_on=4
                     if selct_on in [1,2,3]:
                         with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
-                  #      with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
+                    #    with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
                             #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
                             if ((selct_on in [1,3])&(y_fund)):
                                 for i in range(0,len(fund_xls)):
@@ -1251,7 +1302,7 @@ def select_fund(struc=True,path_flow='C:\\IndexTrader\\required_inputs\\flows.cs
 
 #def cash_fx_pre_trd_comp(lst_funds, csh_flow):
 
-def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testing=False):
+def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=True,testing=False):
         #import future
     
         import sys
@@ -1306,7 +1357,8 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testi
             startDate = datetime.today()
             pd.options.display.max_rows = 200
             dirtoimport_file='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
-            dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
+            dirtoimport_cashfile = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
+            #dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
             # Map fund and benchmark settings 
             
               # Pull in fund dictionary
@@ -1343,7 +1395,8 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testi
             #cash_flows_eff = pd.read_csv('H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\flows.csv')
             cash_flows_eff = pd.read_csv('C:\\IndexTrader\\required_inputs\\flows.csv',thousands=',')
             cash_flows_eff=(cash_flows_eff[cash_flows_eff.Port_code.isin(lst_fund)]).drop('Trade',1)
-           
+            fut_sufx=(cash_flows_eff[['fut_sufx']]).values[0].tolist()[0]
+            #print(fut_sufx)
             
             
              # Import futures
@@ -1472,17 +1525,34 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testi
             xdf= dfprt[dfprt.AssetType3.isin(['Cash on call','Val cash','Cash flow'])]
             xdf1=xdf
             xdf=xdf.groupby(['Trade_date','Port_code']).agg({'MarketValue':'sum'}).reset_index()
+           # xdf.Port_code.unique().tolist()
             
-            cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
-                                 converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
-                                                    'Portfolio':str, 'Type':str, 
-                                                    'Security name':str,
-                                                    'Security Code':str,
-                                                    'Quantity':float,
-                                                    ' +/-':str,
-                                                    'Amount': float},
-                                )
-            xdf.Port_code.unique().tolist()
+#            cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
+#                                 converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
+#                                                    'Portfolio':str, 'Type':str, 
+#                                                    'Security name':str,
+#                                                    'Security Code':str,
+#                                                    'Quantity':float,
+#                                                    ' +/-':str,
+#                                                    'Amount': float},
+#                                )
+            cash_xls = pd.read_excel(newest_cash,sheet_name='Detail', 
+                         converters={'Portfolio':str,
+                                     'Instrument':str,
+                                     'Currency':str,
+                                     'Type':str,
+                                     'Sign':str,
+                                     'Qty':float,
+                                     'Amt Current': float,
+                                     'Amt Gross': float,
+                                     'Trade Date':pd.to_datetime,
+                                     'Settle Date': pd.to_datetime 
+                                            },
+                                     )
+            cash_xls.columns = [col.strip()  for col in cash_xls.columns]
+            cash_xls=cash_xls.drop(['Currency','Amt Gross'],axis=1)
+            cash_xls.columns = ['Portfolio','Security Code','Type',' +/-','Quantity','Amount','Trade date',	'Settle Date']
+
             
             cash_xls=cash_xls[cash_xls.Portfolio.isin(xdf.Port_code.unique().tolist())]
             cash_xls=cash_xls.copy()
@@ -1497,10 +1567,11 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=False,testi
             all_dta=all_dta.melt(id_vars=['Settle Date'], value_vars=all_dta.columns[1:],var_name='Portfolio', value_name='Cash')
             all_dta=all_dta[all_dta['Settle Date']==all_dta['Settle Date'].max()]
             all_dta=pd.merge(xdf, all_dta, how='left', left_on=['Port_code'], right_on=['Portfolio'])
+            all_dta.loc[:,'Cash']=all_dta.Cash.fillna(0)
             all_dta.loc[:,'Settled_cash']=all_dta['Cash'].values+all_dta['MarketValue'].values
             all_dta=all_dta[['Port_code','Settled_cash']]
             
-            return all_dta    
+            return [all_dta,fut_sufx]
 #        
 
 
@@ -1694,7 +1765,7 @@ def trade_calc_automatic(p,Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash
 '                                                                   Bulk cash calc excel report
 '******************************************************************************************************************************************************************************    
 """
-def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw,automatic,
+def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw,automatic,dirtoimport_cashbal,
                            vba_bin='//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/code/vbaProject.bin'):
     
     import pandas as pd
@@ -1710,6 +1781,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     import xlsxwriter
     import time
     from write_excel import hedge_with_box as hf
+    from write_excel import cash_forecast 
     
     start_time = datetime.now() 
     
@@ -1754,6 +1826,10 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
             print(inv[key][2])
             inv[key][2]='Hedged Withdrawal'
             print(inv[key][2])
+    
+    c_st=cash_forecast(dirtoimport_cashbal,startDate,lst_fund)
+    
+    
     
     qf=pd.DataFrame([], dtype='object')
     futures_dict = dict()
@@ -1872,7 +1948,9 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     cell_format2_3 = workbook.add_format({'bold': False, 'font_color': 'black', 'font':11,'bg_color':'#CCFFFF'})
     cell_format2_3.set_font_size(10)
     cell_format2_4 = workbook.add_format({'bold': True, 'font_color': 'white', 'font':11,'bg_color':'#003366'})
-    
+    cell_format2_5 = workbook.add_format({'bold': False, 'font_color': 'black', 'font':10})                                         
+    cell_format2_5.set_font_size(10)
+    cell_format2_5.set_align('right')
     
     cell_format3 = workbook.add_format({'bold': True, 'bg_color':'#CCFFFF', 'font':11, 'locked':False })
     #cell_format4 = workbook.add_format({'bold': True, 'bg_color':'#339966', 'font':11, 'locked':False })
@@ -1894,6 +1972,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     cell_format6_5 = workbook.add_format({'bold': True, 'bg_color':'#FFFFCC',   'font_color': 'black' ,'align': 'center','border': 1})
     cell_format6_6 = workbook.add_format({'bold': False, 'font_color': 'blue', 'locked': False ,'align': 'center','border': 1})
     cell_format6_6.set_font_size(10)
+    cell_format6_7 = workbook.add_format({'bold': True, 'bg_color':'#00CCFF',   'font_color': 'black' ,'align': 'center','border': 1})
     
     cell_format7 = workbook.add_format({'bold': True, 'bg_color':'#CCFFCC', 'font':11, 'align': 'center','border': 1})
     cell_format8 = workbook.add_format({'bold': True, 'font':11, 'font_color': '#339966','align': 'center','border': 1})
@@ -2114,7 +2193,11 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
         if _label_=='POST-TRADE':
              worksheet.write_string(str('B'+str(in_st+17)), 'BARRA CASH',bn_cell_format1)
              worksheet.write_string(str('B'+str(in_st+18)), 'TRADE ACTION',cell_format6_5)
-            
+             worksheet.write_string(str('B'+str(in_st+20)), 'CASH BALANCES',cell_format6_7)
+             worksheet.write(str('B'+str(in_st+21)), datetime.strftime(c_st[1][0], "%Y-%m-%d"), cell_format2_5)
+             worksheet.write(str('B'+str(in_st+22)), datetime.strftime(c_st[1][1], "%Y-%m-%d"), cell_format2_5)
+             worksheet.write(str('B'+str(in_st+23)), datetime.strftime(c_st[1][2], "%Y-%m-%d"), cell_format2_5)
+             
     
     form_at()
     form_at(st_no=(st_row+2*len(qf)+1),_label_='TRADE')
@@ -2299,15 +2382,19 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
                                             'input_title': 'Enter a Trade Action',
                                             'input_message': 'Type'} )
          worksheet.conditional_format(str(alp[pt_col]+str(pt_st+17)+":"+alp[pt_col+1]+str(pt_st+17)),{'type': 'cell','criteria': '!=','value': '"N"','format': cell_format6_6})
+         for tm in range(3):
+             worksheet.write(str(alp[pt_col]+str(pt_st+20+tm)),c_st[0][f][tm],format1)
+             worksheet.write_formula(str(alp[pt_col+1]+str(pt_st+20+tm)),str('='+str(alp[pt_col]+str(pt_st+20+tm))+'/'+str(alp[pt_col]+str(pt_st+1))),informat2_n)
+         worksheet.conditional_format(str(alp[pt_col]+str(pt_st+22)), {'type':'formula',
+                                                                      'criteria': str('=('+str(alp[pt_col]+str(pt_st+22))+'-'+str(alp[pt_col]+str(pt_st-1))+'+'+str(alp[pt_col]+str(11))+')<=0'),
+                                                                      'format':   cell_format5_1})
     #     worksheet.conditional_format(str(alp[pt_col]+str(pt_st+17)),{'type': 'cell','criteria': 'equal to','value': '"N"','format': cell_format6_6})
         
          pt_col=pt_col+2
          
          
                            
-    del f 
-    del g
-    del gg
+    del [f ,g, gg, tm]
     
     worksheet.freeze_panes(18,2)
     #worksheet.write_comment('C10', 'Enter cash flow info below', {'start_col': 5,'start_row': 7, 'x_scale': 1.2, 'y_scale': 0.25, 'visible': True ,'font_size': 11, 'bold':True ,'color': '#FFCC99'})
@@ -2377,6 +2464,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
     from tkinter import Tk
     from tkinter import messagebox
     from write_excel import hedge_with_box as hf
+    from write_excel import CreateBPMAttribute as bpm_attr
     import glob 
     import string
 
@@ -2411,8 +2499,9 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         root.withdraw()
         
     if root_file == '':
-        msg1 = ['No file']
-        msg=['selected']
+        msg1 = ['selected']
+        msg=['no file']
+        a_msg=['']
     else:
         
         sng = root_file
@@ -2425,6 +2514,7 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         dirtooutput_fileF=str(output_folder+'\\FuturesFile\\')
         dirtooutput_fileBO=str(output_folder+'\\Batch Optimisation Reports\\')
         dirtooutput_fileET=str(output_folder+'\\Equity Trades\\')
+        dirtooutput_fileAF=str(output_folder+'\\Attribute File\\')
         
         
         
@@ -2439,7 +2529,8 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
        
         if not os.path.exists(dirtooutput_fileET):
             os.makedirs(dirtooutput_fileET)
-       
+        if not os.path.exists(dirtooutput_fileAF):
+            os.makedirs(dirtooutput_fileAF)
             
         xl = win32com.client.Dispatch("Excel.Application")  # Set up excel
         wb=xl.Workbooks.Open(Filename = root_file)         # Open .xlsm file from step 2A
@@ -2466,7 +2557,6 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
             
             chk_fut=hf(hg_with,fnd_chck, snd=False)
             
-                
             
             with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fin:
             
@@ -2518,7 +2608,15 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
                        msg1="No futures file generated"
                        fsm=fsm+[msg1]
                        #bsm=bsm+[msg]
+            if clear_cash:
+                a_msg=['']
+            else:
+                try:
+                    a_msg=bpm_attr(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds=fnd_chck)    
+                except:
+                    a_msg = ["Attribute file failed!"]
             
+            wb.Close(False)
             
             if all([elem == 'No cash file generated' for elem in bsm]):
                 os.remove(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
@@ -2538,9 +2636,9 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
             msg=['Please check']
             msg1=['funds selected']
         
-        wb.Close(False)
+        
         del xl
-    return '\r\n'.join(list(set(msg+msg1)))
+    return '\r'.join(list(set(msg+msg1+a_msg)))
     
 
 """    
@@ -2567,31 +2665,32 @@ def cash_flow_validity_fx(cash_flows_eff,newest_cash,startDate,lst_fund, bf=0.00
 #newest=str(dirtoimport_file+'UFMPosCash20190128.xls')
 #startDate=startDate.replace(day=28)
 
-    cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
-                             converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
-                                                'Portfolio':str, 'Type':str, 
-                                                'Security name':str,
-                                                'Security Code':str,
-                                                'Quantity':float,
-                                                ' +/-':str,
-                                                'Amount': float},
-                            )
+#    cash_xls = pd.read_excel(newest_cash,sheet_name='Cash', 
+#                             converters={'Settle Date': pd.to_datetime, 'Trade date':pd.to_datetime,
+#                                                'Portfolio':str, 'Type':str, 
+#                                                'Security name':str,
+#                                                'Security Code':str,
+#                                                'Quantity':float,
+#                                                ' +/-':str,
+#                                                'Amount': float},
+#                            )
 
-#    cash_xls = pd.read_excel(newest, sheet_name='Detail', 
-#                           converters={'Portfolio': str,
-#                                       'Instrument': str,
-#                                       'Currency': str,
-#                                       'Type':str,
-#                                       'Sign':str,
-#                                       'Qty':float,
-#                                       'Amt Current':float,
-#                                       'Amt Gross':float,
-#                                       'Trade date':pd.to_datetime,
-#                                       'Settle Date': pd.to_datetime},)
+    cash_xls = pd.read_excel(newest_cash, sheet_name='Detail', 
+                           converters={'Portfolio': str,
+                                       'Instrument': str,
+                                       'Currency': str,
+                                       'Type':str,
+                                       'Sign':str,
+                                       'Qty':float,
+                                       'Amt Current':float,
+                                       'Amt Gross':float,
+                                       'Trade date':pd.to_datetime,
+                                       'Settle Date': pd.to_datetime},)
     
     cash_xls.columns = [col.strip()  for col in cash_xls.columns]
-    
-    
+    cash_xls=cash_xls.drop(['Currency','Amt Gross'],axis=1)
+    cash_xls.columns = ['Portfolio','Security Code','Type','+/-','Quantity','Amount','Trade date',	'Settle Date']
+
     
     cash_xlssub = (cash_xls.copy())[((cash_xls.Type.isin(['CSFLOW','CSHOUT','CSHINJ','CSHWTHD']))&(cash_xls.Portfolio.isin(lst_fund))
                                     &(pd.to_datetime(cash_xls['Settle Date'])==pd.to_datetime(startDate.date()))
@@ -2905,7 +3004,7 @@ def hedge_with_box(chx_flw,lst_fnd, snd=True):
     
     
         
-    if len(hg_with_lst):
+    if len(hg_with_lst)>0:
         if snd:
             pass
         else:
@@ -2992,3 +3091,287 @@ def clear_cash_fx_drop(dir_imp='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADE
         os.startfile(str(IT_folder+'\\Cash Holdings\\')) 
     return msg
 
+"""
+'******************************************************************************************************************************************************************************    
+                                                                        Cash Balances (t..t+3)
+'******************************************************************************************************************************************************************************    
+"""
+
+def cash_forecast(dirtoimport_cashbal, startDate ,lst_fund):
+   import pandas as pd
+    
+   import glob
+   import os
+   
+   from bdateutil import isbday
+   import bdateutil as bdut
+   import holidays as hol      
+   
+   
+   newest_cashbal=max(glob.iglob(dirtoimport_cashbal+'*.xls'), key=os.path.getmtime)
+        #str(dirtoimport_file+newest)
+        #newest
+        
+   bal_xls = pd.read_excel(newest_cashbal,sheet_name='Balances',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+        'Inst Type':str, 
+        'Inst Name':str,
+        'ISIN':str,
+        'Instrument':str,
+        'Quote Close':float,
+        'Qty':float,
+        'Market Val':float,
+        'Delta':float,	
+        'Origin':str},
+        )
+   bal_xls=bal_xls[bal_xls['Portfolio/Currency'].isin([str(f+'/ZAR')for f in lst_fund ])]
+   bal_xls.loc[:,'Port_code']=bal_xls['Portfolio/Currency'].apply(lambda x: x.replace('/ZAR',''))
+   bal_xls=bal_xls.drop(['Portfolio/Currency'], axis=1)                                 
+   bal_xls=bal_xls[['Port_code','D','D + 1','D + 2','D + 3'] ]
+   bal_xls=pd.pivot_table(bal_xls,  columns = 'Port_code')
+   
+   dtes=pd.bdate_range(start=startDate.date()+bdut.relativedelta(bdays=+1, holidays=hol.SouthAfrica()), end=startDate.date()+bdut.relativedelta(bdays=+3, holidays=hol.SouthAfrica()), holidays =hol.SouthAfrica())
+            
+   return [bal_xls, dtes]
+    
+    
+    
+
+    
+def special_fund_load(fnd_lst,ans, fnd_dir='C:\\IndexTrader\\required_inputs\\', fnd_dict='fund_dictionary_global.csv'):
+    import tkinter 
+    from tkinter import Label
+    from tkinter import Checkbutton
+    from tkinter import IntVar
+    from tkinter import Button
+    from tkinter import Entry
+    from tkinter import messagebox
+    #from write_excel import select_fund as sf
+    import numpy as np
+    import pandas as pd
+    
+    if ans:
+    
+        fnd_csv=pd.read_csv(str(fnd_dir+fnd_dict))
+        fnd_csv['TradingAccount']= np.where(fnd_csv.TradingAccount.isnull(),'None', fnd_csv.TradingAccount.values)
+        dic_om_index=fnd_csv.set_index(['FundCode']).T.to_dict('list')
+        hgt=np.int(len(fnd_lst)/3*100)+100
+    
+        tac_with_lst=fnd_lst
+        if (all(g in fnd_csv['FundCode'].unique() for g in tac_with_lst)):
+           
+       
+            coot = tkinter.Toplevel()
+            coot.geometry(str("400x"+str(hgt)+"+600+450"))
+            coot.title('Trading Accounts')
+          #  Label(coot, text="", font="Helvetica 10 bold").grid(row=0, sticky="w")
+            Label(coot, text="Please select fund(s) you require trading account(s) for:", font="Helvetica 10 bold").grid(row=0, columnspan=2,sticky="w")
+            Label(coot, text="Fund", font="Helvetica 10 bold").grid(row=1, column=0,sticky="w")
+            Label(coot, text="Trading Account", font="Helvetica 10 bold").grid(row=1, column=1,sticky="w")
+            
+                   
+            i=1
+            var_categories = {}
+            trd_categories ={}
+         #   chckbx_categories = {}
+            if len(tac_with_lst)==1:
+                cf = IntVar()
+                Checkbutton(coot, text=tac_with_lst, variable=cf,font="Helvetica 9").grid(row=i+3,  column=0,sticky='w')
+                entryText = tkinter.StringVar()
+                e1=Entry(coot,font="Helvetica 9",textvariable=entryText).grid(row=i+3, column=1,sticky="w")
+                entryText.set( dic_om_index[tac_with_lst[0]][4])
+                var_categories[tac_with_lst[0]] = cf
+                trd_categories[tac_with_lst[0]]= entryText
+                print(entryText)
+                del [cf,entryText]
+            else:    
+                for fnd in tac_with_lst:
+                    cf = IntVar()
+                    Checkbutton(coot, text=fnd, variable=cf,font="Helvetica 9").grid(row=i+3, sticky='w')
+                    entryText = tkinter.StringVar()
+                    e1=Entry(coot,font="Helvetica 9",textvariable=entryText).grid(row=i+3, column=1,sticky="w")
+                    entryText.set(dic_om_index[fnd][4] )
+                    var_categories[fnd] = cf
+                    trd_categories[fnd] =entryText
+                    print(entryText)
+                    i+=1
+                    del [cf,entryText]
+            Label(coot, text= 'Trading Account(s):Enter alternative account code(s) if required', font="Helvetica 7" ,bg='pink').grid(row=i+5, column=0, columnspan = 2, sticky='w')   
+            Button(coot, text='OK', command=coot.quit, font="Helvetica 10").place(relx=0.5, rely=0.88, anchor="c")
+            del i
+            #print(var_categories)   
+            coot.mainloop()
+            coot.withdraw()
+    
+            trd_chck_lst={}
+            fnd_chck_lst={}
+            
+            for key in tac_with_lst:
+                trd_chck_lst[key]=0
+                fnd_chck_lst[key]=dic_om_index[key][4]
+                
+            for key,val in var_categories.items():   
+                trd_chck_lst[key]=val.get()
+            
+            for key,val in trd_categories.items():   
+                fnd_chck_lst[key]=val.get()
+              
+            for key in tac_with_lst:    
+                if trd_chck_lst[key]==1:
+                    if fnd_chck_lst[key] in ['None','']:
+                        fnd_chck_lst[key]=key
+                    else:
+                        pass
+                else:
+                    fnd_chck_lst[key]=key
+            msg='Yebo!!'
+        else:
+            msg='Fund selected is not part of Index Funds'
+            fnd_chck_lst=[]
+    else:
+        msg='No trading accounts selected'
+        fnd_chck_lst=[]
+                        
+    #print(msg)
+    return [fnd_chck_lst,msg]
+    
+    
+    
+
+#special_fund_load(['OMRTMF','DSALPC','OMRTMF','OMSI01','MFEQTY'],ans=True, fnd_dir='C:\\IndexTrader\\required_inputs\\', fnd_dict='fund_dictionary_global.csv')
+
+"""
+'******************************************************************************************************************************************************************************    
+                                                                        Create Attribute File (BPM)
+'******************************************************************************************************************************************************************************    
+"""
+
+def CreateBPMAttribute(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds):
+    
+    import pandas as pd
+    import numpy as np
+    import openpyxl
+    import os
+    import tkinter
+    
+    rowcount=ws.UsedRange.Rows.Count
+    colcount=ws.UsedRange.Columns.Count
+    lst_fnds=[]
+    eq_trade=[]
+    trd_act=[]
+    for i in range(3,colcount,2): #start at column 3, step by 2 through all 'active' columns
+        print(i)
+        lst_fnds.append(xl.Cells(7,i).value) #reads row 7
+        #lst_fnds = list(filter(None, lst_fnds)) # Filter out the None
+        eq_trade.append(xl.Cells(63,i+1).value) #This will add 1 to the column 3 start
+        trd_act.append(xl.Cells(81,i).value) # This will still start at column 3
+    #wb.Close()
+    
+    keep=['Trade EQTY+FUT','Trade EQTY']
+    trd_act_s=((pd.Series(trd_act)).isin(keep)).tolist()
+    lst_fnds=(pd.Series(lst_fnds)[trd_act_s]).tolist()
+    eq_trade=(pd.Series(eq_trade)[trd_act_s]).tolist()
+    
+    hgt=np.int(len(lst_fnds)/3*100)+70
+        
+    coot = tkinter.Toplevel()
+    coot.geometry(str("350x"+str(hgt)+"+550+500"))
+    coot.title('Trade type selection')
+    tkinter.Label(coot, text="Please select trade action (BPM):", font="Helvetica 10 bold").grid(row=0,  sticky='w')
+            
+    i=1
+    var_categories = {}
+     #   chckbx_categories = {}
+    for x in range(0,(len(lst_fnds))):
+        print(x)
+        cf = tkinter.IntVar()
+        fnd=lst_fnds[x]
+        tkinter.Label(coot, text=fnd, font="Helvetica 10 bold").grid(row=i,column=0, sticky='w',padx='10')
+        tr_typ = tkinter.StringVar(coot)
+        print(eq_trade[x].split(" ")[0])
+        if eq_trade[x].split(" ")[0]=="":
+            eq_trd_ac="ALLOWALL"
+        else:
+            eq_trd_ac=eq_trade[x].split(" ")[0]
+            
+        tr_typ.set(eq_trd_ac) # default value
+        if tr_typ.get()=='BUY':
+            var2="SELL"
+            var3="ALLOWALL"
+        elif tr_typ.get()=='SELL':
+            var2="BUY"
+            var3="ALLOWALL"
+        else:
+            var2="BUY"
+            var3="SELL"
+            
+        
+        w = tkinter.OptionMenu(coot, tr_typ, eq_trd_ac, var2, var3)
+     #   w.config(bg = "white") 
+        w.configure(background="white", activebackground="white")
+        w["menu"].configure(bg="white")
+        w.grid(row=i,column=1, sticky='w')
+    
+        var_categories[fnd] = tr_typ
+        del cf
+        i+=1
+        
+        
+    tkinter.Button(coot, text='OK', command=coot.quit, font="Helvetica 10").place(relx=0.45, rely=0.71)
+    del i
+    #print(var_categories)   
+    
+    coot.mainloop()
+    coot.withdraw()
+    
+    trd_type_lst={}   
+    for key,val in var_categories.items():   
+        trd_type_lst[key]=val.get()
+            
+    #Attribute File
+  #  user_dict2=pd.read_csv('C:\\IndexTrader\\bpm_attribute\\user_dictionary_bpm.csv')
+  #  dic_users2=user_dict2.set_index(['username']).T.to_dict('list')
+    
+    #OPENPYXL  
+    wb = openpyxl.Workbook()
+    sheet = wb.active
+    c1 = sheet.cell(row = 1, column = 1)
+    c1.value = '<ATTRIBUTE NAME>'
+    c2 = sheet.cell(row = 2, column = 1)
+    c2.value = '<OWNER>'
+    c3 = sheet.cell(row = 3, column = 1)
+    c3.value = '<ASSOCIATION>'
+    c4 = sheet.cell(row = 4, column = 1)
+    c4.value = '<TYPE>'
+    c5 = sheet.cell(row = 5, column = 1)
+    c5.value = '<MAXIMUM AGE>'
+    c6 = sheet.cell(row = 6, column = 1)
+    c6.value = '<PORTFOLIO>'
+    c7 = sheet.cell(row = 1, column = 2)
+    c7.value = (startDate.strftime('%Y%m%d-%H-%M-%S') +' ' + os.getlogin())
+    c8 = sheet.cell(row = 2, column = 2)
+    c8.value = (dic_users[os.environ.get("USERNAME").lower()][1])
+    c9 = sheet.cell(row = 3, column = 2)
+    c9.value = 'Miscellaneous'
+    c10 = sheet.cell(row = 4, column = 2)
+    c10.value = 'Text'
+    c11 = sheet.cell(row = 5, column = 2)
+    c11.value = 'None'
+    c12 = sheet.cell(row = 6, column = 2)
+    c12.value = '<PORTFOLIO OWNER>'
+    c13 = sheet.cell(row = 6, column = 3)
+    c13.value = '<VALUE>'
+    
+    for i in range(0,len(lst_fnds)):
+        if i <= (len(lst_fnds)-1):
+            b1=sheet.cell(row = 7+i, column = 1)
+            b1.value = lst_fnds[i]
+            b2=sheet.cell(row = 7+i, column = 3)
+         #   b2.value = str(dic_users[os.environ.get("USERNAME").lower()][2] +'/'+ lst_fnds[i]+"_"+trd_type_lst[lst_fnds[i]])
+            b2.value = str(dic_users['tmfelang2'][2] +'/'+ lst_fnds[i]+"_"+trd_type_lst[lst_fnds[i]])
+            
+            b3=sheet.cell(row = 7+i, column = 2)
+            b3.value = 'ITAdmin'
+        
+    wb.save(('\\'.join([dirtooutput_fileAF,str('AttributeFile_'+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.xlsx')])))
+    msg='Attribute File created'
+    return [msg]
