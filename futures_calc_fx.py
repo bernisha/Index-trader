@@ -4,7 +4,7 @@ Created on Mon Mar 26 13:09:43 2018
 
 @author: blala
 """
-def fut_calc_func(response,orders=False):
+def fut_calc_func(response,orders=True):
     #import future
     import sys
     #sys.path.append('C:\Program Files (x86)\WinPython\python-3.6.5.amd64\lib\site-packages\IPython\extensions')
@@ -70,7 +70,8 @@ def fut_calc_func(response,orders=False):
         #dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\'
         #dirtoimport_file= 'H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\'
         dirtoimport_file='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
-        dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
+        #dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
+        dirtoimport_cashfile = '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
         
         # directory to export report to
         #dirtooutput_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Futures Trades'
@@ -223,7 +224,7 @@ def fut_calc_func(response,orders=False):
         #'Market price value':float},
         #)
         
-        fund_xls = pd.read_excel(newest,sheet_name=0,converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+        fund_xls = pd.read_excel(newest,sheet_name='Orders',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
         'Inst Type':str, 
         'Inst Name':str,
         'ISIN':str,
@@ -237,7 +238,18 @@ def fut_calc_func(response,orders=False):
 
         fund_xls=fund_xls.drop(['Delta'],axis=1)
         if orders:
-            pass
+            fund_xls.loc[:,'Inst Name']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "DIF",fund_xls['Inst Name'].values),fund_xls['Inst Name'].values)
+            fund_xls.loc[:,'Instrument']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "ZAR",fund_xls['Instrument'].values),fund_xls['Instrument'].values)
+            fund_xls.loc[:,'Inst Type']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE","PAYABLE",fund_xls['Inst Type'].values),fund_xls['Inst Type'].values)
+            fund_xls.loc[:,'Qty']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Qty'].values),fund_xls['Qty'].values)
+            fund_xls.loc[:,'Market Val']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Market Val'].values),fund_xls['Market Val'].values)
+           
+           
         else:
             fund_xls=fund_xls[fund_xls.Origin=='POSITION']
         fund_xls=fund_xls.drop(['Origin'],axis=1)
@@ -526,7 +538,7 @@ def fut_calc_func(response,orders=False):
         n_comb_eff_1 = n_comb_eff_1[~n_comb_eff_1.index.duplicated(keep='first')]
    #     n_comb_eff_1['Trade_p'=]
         # write excel report
-        exl_rep(output_folder,dic_users,n_comb_eff_1,startDate,newest)
+        exl_rep(output_folder,dic_users,n_comb_eff_1,startDate,newest,orders)
         #excel_fx(output_folder,dic_users,n_comb_eff_1,startDate)
         #exl_rep('c:\\data\\',dic_users,n_comb_eff_1,startDate)
         print("\nReport Complete")
@@ -547,3 +559,5 @@ def fut_calc_func(response,orders=False):
         print("Exit")
             #quit()
             
+if __name__ == "__main__":
+    fut_calc_func(response='yes',orders=True)

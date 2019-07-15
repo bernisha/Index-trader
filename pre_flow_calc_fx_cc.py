@@ -272,7 +272,17 @@ def pre_flow_calcFx_cc(config_path,
 
         fund_xls=fund_xls.drop(['Delta'],axis=1)
         if orders:
-            pass
+            fund_xls.loc[:,'Inst Name']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "DIF",fund_xls['Inst Name'].values),fund_xls['Inst Name'].values)
+            fund_xls.loc[:,'Instrument']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "ZAR",fund_xls['Instrument'].values),fund_xls['Instrument'].values)
+            fund_xls.loc[:,'Inst Type']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE","PAYABLE",fund_xls['Inst Type'].values),fund_xls['Inst Type'].values)
+            fund_xls.loc[:,'Qty']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Qty'].values),fund_xls['Qty'].values)
+            fund_xls.loc[:,'Market Val']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Market Val'].values),fund_xls['Market Val'].values)
+         
         else:
             fund_xls=fund_xls[fund_xls.Origin=='POSITION']
         fund_xls=fund_xls.drop(['Origin'],axis=1)
@@ -535,7 +545,7 @@ def pre_flow_calcFx_cc(config_path,
             
             
         
-        bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic,vba_bin)
+        bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic,dirtoimport_file,orders,vba_bin)
         print("\nReport Complete")
         
     else:

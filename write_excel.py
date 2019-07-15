@@ -332,7 +332,7 @@ def chck_fut(no_fut, eff_cash, mx_eff_cash, mn_eff_cash, tgt_eff_cash, cls_price
 """
 
 
-def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
+def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest,orders):
     
     import pandas as pd
     import numpy as np
@@ -382,6 +382,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     unlocked = workbook.add_format({'locked': False})
     locked = workbook.add_format({'locked': True})
     cell_format1_1 = workbook.add_format({'bold': False, 'font_color': 'white', 'font':12})
+    cell_format5 = workbook.add_format({'bold': True, 'bg_color':'#00FFFF', 'font':12})
     
     
     worksheet.write_string('A1', 'Indexation Futures Report',cell_format1)
@@ -393,13 +394,15 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     worksheet.write('B3', datetime.strftime(datetime.today(), "%Y-%m-%d %H:%M:%S"), cell_format2_1)
     worksheet.write_string('A4', 'Prepared by',cell_format2)
     worksheet.write_string('B4',str(dic_users[os.environ.get("USERNAME").lower()][1]).upper(), cell_format2_1)
-    worksheet.write_string('A5', 'Authorised by',cell_format2)
-    worksheet.merge_range('B5:C5','', cell_format3)
+    worksheet.write_string('A6', 'Authorised by',cell_format2)
+    worksheet.merge_range('B6:C6','', cell_format3)
     worksheet.write_string('D3', 'File used:',cell_format2)
     worksheet.write_string('E3', newest,cell_format2_1)
     worksheet.write_string('D4', 'Timestamp:',cell_format2)
     worksheet.write_string('E4', time.ctime(os.path.getmtime(newest)) ,cell_format2_1)
-   
+    worksheet.write_string('A5', 'Orders included',cell_format2)
+    worksheet.write_string('B5', str(orders),cell_format5)
+
     #worksheet.write_string('A7', 'USWIMF',merge_format1)
       
     
@@ -421,8 +424,8 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     
     worksheet.write(7, 12, "No. Futures / Price", cell_format2_2)
     
-    worksheet.set_column('A:A', 13)
-    worksheet.set_column('B:B', 4)
+    worksheet.set_column('A:A', 16)
+    worksheet.set_column('B:B', 6)
     worksheet.set_column('C:C', 17)
     worksheet.set_column('D:D', 17)
     worksheet.set_column('E:E', 15)
@@ -438,7 +441,7 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     worksheet.set_column('L:L',11)
     worksheet.set_column('M:M',11)
     worksheet.set_column('N:N',11)
-    worksheet.set_column('O:O',11)
+    worksheet.set_column('O:O',9)
     worksheet.set_column('P:P',15)
     worksheet.set_column('Q:Q',14)
     worksheet.set_column('R:R',12)
@@ -628,8 +631,8 @@ def excel_fx(output_folder,dic_users,n_comb_eff_1,startDate,newest):
     from openpyxl.comments import Comment
     comment = Comment('Sign-off','PM')
     comment.height = 20
-    mysheet["B5"].comment = comment
-    
+    mysheet["B6"].comment = comment
+    mysheet.sheet_view.zoomScale = 84
     mywb.save(output_file) 
     
     os.startfile(output_folder)
@@ -1429,7 +1432,17 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=True,testin
     
             fund_xls=fund_xls.drop(['Delta'],axis=1)
             if orders:
-                pass
+                fund_xls.loc[:,'Inst Name']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "DIF",fund_xls['Inst Name'].values),fund_xls['Inst Name'].values)
+                fund_xls.loc[:,'Instrument']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "ZAR",fund_xls['Instrument'].values),fund_xls['Instrument'].values)
+                fund_xls.loc[:,'Inst Type']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE","PAYABLE",fund_xls['Inst Type'].values),fund_xls['Inst Type'].values)
+                fund_xls.loc[:,'Qty']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Qty'].values),fund_xls['Qty'].values)
+                fund_xls.loc[:,'Market Val']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Market Val'].values),fund_xls['Market Val'].values)
+         
             else:
                 fund_xls=fund_xls[fund_xls.Origin=='POSITION']
             fund_xls=fund_xls.drop(['Origin'],axis=1)
@@ -1765,7 +1778,7 @@ def trade_calc_automatic(p,Flag, tgt_effcash, tgt_totcash, fut_code,  mx_effcash
 '                                                                   Bulk cash calc excel report
 '******************************************************************************************************************************************************************************    
 """
-def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw,automatic,dirtoimport_cashbal,
+def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index,newest,output_folder,fnd_excp,chx_flw,automatic,dirtoimport_cashbal,orders,
                            vba_bin='//za.investment.int/dfs/dbshared/DFM/Tools/Indexation_trading_tools/IndexTrader/code/vbaProject.bin'):
     
     import pandas as pd
@@ -1976,7 +1989,9 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
     cell_format7 = workbook.add_format({'bold': True, 'bg_color':'#CCFFCC', 'font':11, 'align': 'center','border': 1})
     cell_format8 = workbook.add_format({'bold': True, 'font':11, 'font_color': '#339966','align': 'center','border': 1})
+    cell_format9 = workbook.add_format({'bold': True, 'font':11, 'bg_color': '#FFFF00','align': 'center','border': 0})
     
+                                        
     td_cell_format_1 = workbook.add_format({'bold': True, 'bg_color':'#FFC7CE', 'font':10,'font_color': '#9C0006'  })
     td_cell_format_2 = workbook.add_format({'bold': True, 'bg_color':'#C6EFCE', 'font':10,'font_color': '#006100'  })
     
@@ -2001,8 +2016,11 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     worksheet.write('B3', datetime.strftime(datetime.today(), "%Y-%m-%d %H:%M:%S"), cell_format2_1)
     worksheet.write_string('A4', 'Prepared by',cell_format2)
     worksheet.write_string('B4',str(dic_users[os.environ.get("USERNAME").lower()][1]).upper(), cell_format2_1)
-    worksheet.write_string('A5', 'Authorised by',cell_format2)
-    worksheet.merge_range('B5:C5','', cell_format3)
+    worksheet.write_string('A6', 'Authorised by',cell_format2)
+    worksheet.merge_range('B6:C6','', cell_format3)
+    worksheet.write_string('A5', 'Orders included',cell_format2)
+    worksheet.write_string('B5',str(orders), cell_format9)
+    
     
     worksheet.write_string('A10', 'CASHFLOWS',cell_format1 )
     worksheet.write_string('B10', 'Type of Flow',cell_format1 )
@@ -2405,6 +2423,7 @@ def bulk_cash_excel_report(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om
     
     #pandaswb.save()        
     #pandaswb.close()                                                           
+    worksheet.set_zoom(79)
     writer.save()
     workbook.close()
     
@@ -2537,7 +2556,11 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
         ws=wb.Sheets[0]
         bsm=[]
         fsm=[]
-        
+       
+        xl.Visible = False
+        xl.ScreenUpdating = False
+        xl.DisplayAlerts = False
+        xl.EnableEvents = False
         fnd_chck=[]
         for h in range(3, len(lst_fund)*5+2, 2):
             #print(h)
@@ -2609,14 +2632,18 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
                        fsm=fsm+[msg1]
                        #bsm=bsm+[msg]
             if clear_cash:
-                a_msg=['']
+                a_msg=[''] 
             else:
                 try:
                     a_msg=bpm_attr(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds=fnd_chck)    
                 except:
                     a_msg = ["Attribute file failed!"]
-            
+         
             wb.Close(False)
+            xl.Visible=True
+            xl.ScreenUpdating = True
+            xl.DisplayAlerts = True
+            xl.EnableEvents = True
             
             if all([elem == 'No cash file generated' for elem in bsm]):
                 os.remove(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'))
@@ -2633,12 +2660,16 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
                 #os.startfile(dirtooutput_file)  
         else:
             messagebox.showerror('Fund mismatch', 'Please note mismatch in funds selected.\nCheck that your Flows file matches the Batch cash calc file')
-            msg=['Please check']
-            msg1=['funds selected']
-        
+            msg=['Check']
+            msg1=['Funds selected']
+        try:
+            a_msg=a_msg
+        except:
+            a_msg=['']
+         
         
         del xl
-    return '\r'.join(list(set(msg+msg1+a_msg)))
+    return '\r'.join(list(set(msg+msg1))+a_msg)
     
 
 """    
@@ -3259,7 +3290,7 @@ def CreateBPMAttribute(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds):
     eq_trade=[]
     trd_act=[]
     for i in range(3,colcount,2): #start at column 3, step by 2 through all 'active' columns
-        print(i)
+     #   print(i)
         lst_fnds.append(xl.Cells(7,i).value) #reads row 7
         #lst_fnds = list(filter(None, lst_fnds)) # Filter out the None
         eq_trade.append(xl.Cells(63,i+1).value) #This will add 1 to the column 3 start
@@ -3274,7 +3305,10 @@ def CreateBPMAttribute(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds):
     hgt=np.int(len(lst_fnds)/3*100)+70
         
     coot = tkinter.Toplevel()
-    coot.geometry(str("350x"+str(hgt)+"+550+500"))
+    if len(lst_fnds)<10:
+        coot.geometry(str("350x"+str(hgt)+"+550+500"))
+    else:
+        coot.geometry(str("350x"+str(hgt)+"+550+80"))
     coot.title('Trade type selection')
     tkinter.Label(coot, text="Please select trade action (BPM):", font="Helvetica 10 bold").grid(row=0,  sticky='w')
             
@@ -3282,12 +3316,12 @@ def CreateBPMAttribute(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds):
     var_categories = {}
      #   chckbx_categories = {}
     for x in range(0,(len(lst_fnds))):
-        print(x)
+     #   print(x)
         cf = tkinter.IntVar()
         fnd=lst_fnds[x]
         tkinter.Label(coot, text=fnd, font="Helvetica 10 bold").grid(row=i,column=0, sticky='w',padx='10')
         tr_typ = tkinter.StringVar(coot)
-        print(eq_trade[x].split(" ")[0])
+    #    print(eq_trade[x].split(" ")[0])
         if eq_trade[x].split(" ")[0]=="":
             eq_trd_ac="ALLOWALL"
         else:
@@ -3315,8 +3349,10 @@ def CreateBPMAttribute(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds):
         del cf
         i+=1
         
-        
-    tkinter.Button(coot, text='OK', command=coot.quit, font="Helvetica 10").place(relx=0.45, rely=0.71)
+    if len(lst_fnds)>1:   
+        tkinter.Button(coot, text='OK', command=coot.quit, font="Helvetica 10").grid(row=i+3,column=0,sticky='e',padx='20',pady='20')
+    else:
+        tkinter.Button(coot, text='OK', command=coot.quit, font="Helvetica 10").grid(row=i+3,column=0,sticky='e',padx='20',pady='10')
     del i
     #print(var_categories)   
     
@@ -3349,7 +3385,7 @@ def CreateBPMAttribute(ws,xl,startDate,dirtooutput_fileAF,dic_users,lst_fnds):
     c7 = sheet.cell(row = 1, column = 2)
     c7.value = (startDate.strftime('%Y%m%d-%H-%M-%S') +' ' + os.getlogin())
     c8 = sheet.cell(row = 2, column = 2)
-    c8.value = (dic_users[os.environ.get("USERNAME").lower()][1])
+    c8.value = (dic_users[os.environ.get("USERNAME").lower()][2])
     c9 = sheet.cell(row = 3, column = 2)
     c9.value = 'Miscellaneous'
     c10 = sheet.cell(row = 4, column = 2)

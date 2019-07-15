@@ -4,7 +4,7 @@
 Created on Mon Mar 26 13:09:43 2018
 @author: blala
 """
-def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
+def pre_flow_calcFx(response,automatic=True,orders=True,testing=False):
     #import future
 
     import sys
@@ -86,7 +86,9 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
        # dirtoimport_file='\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\'
         #dirtoimport_file= 'H:\\Bernisha\\Work\\IndexTrader\\Data\\required_inputs\\'
         dirtoimport_file='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
-        dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
+        dirtoimport_cashfile ='\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
+        dirtoimport_cashbal= '\\\\za.investment.int\\DFS\\SSDecalogUmbono\\IndexationPosFile\\'
+        #dirtoimport_cashfile = '\\\\za.investment.int\\dfs\\dbshared\\DFM\\TRADES\\Decalog Valuation\\' 
      
         
         # directory to export report to
@@ -244,7 +246,7 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
         #str(dirtoimport_file+newest)
         #newest
         
-        fund_xls = pd.read_excel(newest,sheet_name=0,converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+        fund_xls = pd.read_excel(newest,sheet_name='Orders',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
         'Inst Type':str, 
         'Inst Name':str,
         'ISIN':str,
@@ -258,7 +260,17 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
 
         fund_xls=fund_xls.drop(['Delta'],axis=1)
         if orders:
-            pass
+            fund_xls.loc[:,'Inst Name']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "DIF",fund_xls['Inst Name'].values),fund_xls['Inst Name'].values)
+            fund_xls.loc[:,'Instrument']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE", "ZAR",fund_xls['Instrument'].values),fund_xls['Instrument'].values)
+            fund_xls.loc[:,'Inst Type']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values!="FUTURE","PAYABLE",fund_xls['Inst Type'].values),fund_xls['Inst Type'].values)
+            fund_xls.loc[:,'Qty']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Qty'].values),fund_xls['Qty'].values)
+            fund_xls.loc[:,'Market Val']= np.where(fund_xls.Origin=='ORDER CASH', 
+                                                  np.where(fund_xls['Inst Type'].str.split(" : ",n=1,expand=True)[0].values=="FUTURE",0,fund_xls['Market Val'].values),fund_xls['Market Val'].values)
+         
         else:
             fund_xls=fund_xls[fund_xls.Origin=='POSITION']
         fund_xls=fund_xls.drop(['Origin'],axis=1)
@@ -523,7 +535,7 @@ def pre_flow_calcFx(response,automatic=True,orders=False,testing=False):
             
             
         
-        run_btch=bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic)
+        run_btch=bcer(startDate,new_dat_pf,new_dat, n_comb,dic_users,dic_om_index, newest, output_folder,fnd_excp,chx_flw,automatic,dirtoimport_cashbal,orders)
        # print("\nReport Complete")
         return run_btch
     else:

@@ -179,7 +179,7 @@ class OMGCS_Index_gui:
         self.text_btnB = tkinter.Button(self.labelframeB, text = "Generate Batch Cash Calc", wraplength= self.wl,command = self.batch_report) # create a button to call a function called 'say_hi'
         self.text_btnB.grid(column=0, row=8, sticky='ew',padx=5, pady=5)
 
-        self.text_btnC = tkinter.Button(self.labelframeB, text = "Create BPM Cash & Futures file",wraplength= self.wl, command = self.cashforBPM) # create a button to call a function called 'say_hi'
+        self.text_btnC = tkinter.Button(self.labelframeB, text = "BPM Inputs + Futures file",wraplength= self.wl, command = self.cashforBPM) # create a button to call a function called 'say_hi'
         self.text_btnC.grid(column=0, row=9, sticky='ew',padx=5, pady=5)
 
         
@@ -294,11 +294,26 @@ class OMGCS_Index_gui:
         response = tkinter.messagebox.askquestion("Flows", "Are flows & cash limits up to date?")
         
       #  print(response)
-        lbl=tkinter.Label(window, text = "Futures report generated          \n  \n" ,font=("Helvetica", 10), fg='SystemButtonFace', bg='SystemButtonFace')
-        lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
+   #     lbl=tkinter.Label(window, text = "Futures report generated          \n  \n" ,font=("Helvetica", 10), fg='SystemButtonFace', bg='SystemButtonFace')
+   #     lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
       #  lbl.grid(column=1, row=7, columnspan=1,padx=5, pady=5, sticky='e')
 # If user clicks 'Yes' then it returns 1 else it returns 0
         if response == 'yes':
+              responseF = tkinter.messagebox.askyesnocancel("Orders", "Would you like to include orders in your run?")
+              if responseF==True:
+                  varF=True
+              elif responseF==False:
+                  varF=False
+              else:
+                  varF='Stop'
+              if varF=='Stop':
+                  lbl=tkinter.Label(window, text = "Execution cancelled", fg='green', font=("Helvetica", 10), bg='white')
+                  lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
+              else:
+                  fut_calc(response,orders=varF)
+                  lbl=tkinter.Label(window, text = "Futures report generated    ", fg='green', font=("Helvetica", 10), bg='white')
+                  lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
+             
           #   def read_bytes(self):
               '''simulate reading 500 bytes; update progress bar'''
               self.bytes += 500
@@ -309,14 +324,14 @@ class OMGCS_Index_gui:
             # read more bytes after 100 ms
                  self.after(100, self.fut_report)
 
-              lbl=tkinter.Label(window, text = "Futures report generated    ", fg='green', font=("Helvetica", 10), bg='white')
-              lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
-        
+                 
         else:
             lbl=tkinter.Label(window, text = "Please Update Flows", fg='red', font=("Helvetica", 10), bg='white')
             lbl.place(relx=self.x_pos, rely=self.y_pos, anchor="c")
-        if response=='yes':
-            fut_calc(response)
+            
+#        if response=='yes':
+     
+            
             #print("yes")
           
 # Create the load for futures
@@ -348,10 +363,29 @@ class OMGCS_Index_gui:
       #  lbl.grid(column=2, row=9, sticky='ew',padx=5, pady=5)
 
         response = tkinter.messagebox.askquestion("Flows", "Are flows & cash limits up to date?")
+       
        # print(response)
        
 # If user clicks 'Yes' then it returns 1 else it returns 0
         if response == 'yes':
+              responseO = tkinter.messagebox.askyesnocancel("Orders", "Would you like to include orders in your run?")
+              if responseO==True:
+                  varO=True
+              elif responseO==False:
+                  varO=False
+              else:
+                  varO='Stop'
+                  
+              if varO=='Stop':
+                  lbl=tkinter.Label(window, text = "Execution cancelled", fg='green', font=("Helvetica", 10), bg='white')
+                  lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
+              else:
+                  msg_s=batch_calc_fx(response, orders=varO)
+                  print(msg_s)
+                  lbl=tkinter.Label(window, text = msg_s ,fg='green', font=("Helvetica", 10), bg='white')
+                  lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
+           
+    
           #   def read_bytes(self):
               '''simulate reading 500 bytes; update progress bar'''
               self.bytes += 500
@@ -367,14 +401,7 @@ class OMGCS_Index_gui:
             lbl=tkinter.Label(window, text = "Please Update Flows",fg='red', font=("Helvetica", 10), bg='white')
             lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
             #lbl.grid(column=2, row=9, sticky='ew',padx=5, pady=5)
-        if response=='yes':
-            # runfile('C:/IndexTrader/code/pre_flow_calc.py', wdir='C:/IndexTrader/code')               
-            msg_s=batch_calc_fx(response)
-            print(msg_s)
-            lbl=tkinter.Label(window, text = msg_s ,fg='green', font=("Helvetica", 10), bg='white')
-            lbl.place(relx=self.pos_x, rely=self.pos_y, anchor="c")
-            # print("yes")
-       
+      
         #tkinter.Label(window, text = "Futures report in progress").pack()
        # runfile('C:/IndexTrader/code/futures_calc.py', wdir='C:/IndexTrader/code')
 

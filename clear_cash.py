@@ -75,7 +75,7 @@ with open(str(Config.get('section0',Config.options('section0')[2])+'log_cc_'+str
     # Create batch file
     try:
         clr_cash(config_path,config_path_cash, output_batch,user_dict,fnd_dict,csh_lmt_file,fnd_excp_list,vba_bin,req_input_direc=dest1,
-                 flows=files[0],response='yes',automatic=False,orders=False,testing=False,clear_cash=True)
+                 flows=files[0],response='yes',automatic=False,orders=True,testing=False,clear_cash=True)
         fle.write("Cash calculated in batch cash calc \n")
     # Create cash file to drop to Listener folder
         cash_bpm(fnd_excp=fnd_excp_list,clear_cash=True,user_file=str(dest1+user_dict),dir_out=output_batch)
