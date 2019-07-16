@@ -1241,7 +1241,7 @@ def tloader_fmt_equity(selct_on=1,SSF_Funds=['CORPEQ','MFEQTY'], SSF_parent=['OM
                         selct_on=4
                     if selct_on in [1,2,3]:
                         with open(str(dirtooutput_file+"EquityTrade"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.txt'), "w") as fin:
-                    #    with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
+                     #   with open(str('c:\\data\\'+"EquityTrade"+folder_yr+folder_mth+folder_day+'.txt'), "w") as fin:
                             #fin.write('\n'.join((fund_xls_ex.values.tolist())[0]))
                             if ((selct_on in [1,3])&(y_fund)):
                                 for i in range(0,len(fund_xls)):
@@ -1377,7 +1377,7 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=True,testin
             override=['SSF DIV']             
             
             # Public Holidays
-            pub_holidays = (pd.read_excel("C:\\IndexTrader\\required_inputs\\public_holidays.xlsx"))['pub_holidays'].tolist()
+#            pub_holidays = (pd.read_excel("C:\\IndexTrader\\required_inputs\\public_holidays.xlsx"))['pub_holidays'].tolist()
             #cal = Calendar(holidays=pub_holidays)
             
                     
@@ -1418,7 +1418,7 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=True,testin
             #str(dirtoimport_file+newest)
             #newest
             
-            fund_xls = pd.read_excel(newest,sheet_name=0,converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+            fund_xls = pd.read_excel(newest,sheet_name=0,usecols='A:L',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
             'Inst Type':str, 
             'Inst Name':str,
             'ISIN':str,
@@ -3090,7 +3090,7 @@ def hedge_with_box(chx_flw,lst_fnd, snd=True):
         
 """
 '******************************************************************************************************************************************************************************    
-                                                                        Hedged Withdrawal Check box function
+                                                                        Cash drop for clear cash fx
 '******************************************************************************************************************************************************************************    
 """
 

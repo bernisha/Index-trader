@@ -210,7 +210,7 @@ def fut_calc_func(response,orders=True):
         #newest = max(glob.iglob(dirtoimport_file+'fund_data/*.xls'), key=os.path.getmtime)
         newest = max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
         newest_cash=max(glob.iglob(dirtoimport_cashfile+'*.xls'), key=os.path.getmtime)
-                    
+   #     newest = 'S:\\DFM\\Projects\\Indexation project\\Global\\Data\\CS_PosCashNEW_20190715.xlsx'            
         #str(dirtoimport_file+newest)
         #newest
         
@@ -224,17 +224,21 @@ def fut_calc_func(response,orders=True):
         #'Market price value':float},
         #)
         
-        fund_xls = pd.read_excel(newest,sheet_name='Orders',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
-        'Inst Type':str, 
-        'Inst Name':str,
-        'ISIN':str,
-        'Instrument':str,
-        'Quote Close':float,
-        'Qty':float,
-        'Market Val':float,
-        'Delta':float,	
-        'Origin':str},
-        )
+        fund_xls = pd.read_excel(newest,sheet_name='Orders',
+                           #      names = ['Portfolio','Price Date','Inst Type','Inst Name','ISIN','Instrument',
+                           #               'Quote Close','Qty','Market Val','Delta','Origin','ValueVal'], 
+                                 usecols='A:L',
+                                 converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+                                                'Inst Type':str, 
+                                                'Inst Name':str,
+                                                'ISIN':str,
+                                                'Instrument':str,
+                                                'Quote Close':float,
+                                                'Qty':float,
+                                                'Market Val':float,
+                                                'Delta':float,	
+                                                'Origin':str},
+                                                )
 
         fund_xls=fund_xls.drop(['Delta'],axis=1)
         if orders:
