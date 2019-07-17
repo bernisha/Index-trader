@@ -2577,9 +2577,13 @@ def create_BPMcashfile(fnd_excp= ['DSALPC','OMCC01','OMCD01','OMCD02','OMCM01','
                     hg_with.append(ws.Cells(7, k).value)
             
            #pd.DataFrame(columns=['Port_code','Inflow_use','ActFlow'])
-            
-            chk_fut=hf(hg_with,fnd_chck, snd=False)
-            
+            if clear_cash:
+                 chk_fut={}
+                 for key in fnd_chck:
+                     chk_fut[key]=0
+            else:
+                chk_fut=hf(hg_with,fnd_chck, snd=False)
+     #      print(chk_fut)
             
             with open(str(dirtooutput_file+"BPM_Cash"+startDate.strftime('%Y%m%d %H-%M-%S')+'_'+dic_users[os.environ.get("USERNAME").lower()][1]+'.csv'), "w",newline='\r\n') as fin:
             

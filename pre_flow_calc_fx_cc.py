@@ -255,6 +255,9 @@ def pre_flow_calcFx_cc(config_path,
         #newest = max(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)
         newest = sorted(glob.iglob(dirtoimport_file+'*.xls'), key=os.path.getmtime)[-2]
         newest_cash=sorted(glob.iglob(dirtoimport_cashfile+'*.xls'), key=os.path.getmtime)[-2]
+        #newest= 'U:\\IndexationPosFile\\Copy (1)CS_PosCashNEW_20190716.xls'
+        #newest_cash= 'U:\\IndexationPosFile\\Copy (1)CS_PosCashNEW_20190716.xls'
+        print(newest)
         #str(dirtoimport_file+newest)
         #newest
         
