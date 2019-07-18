@@ -1418,7 +1418,7 @@ def cash_fx_pre_trd_comp(fnds_to_use=['Check'],response='yes',orders=True,testin
             #str(dirtoimport_file+newest)
             #newest
             
-            fund_xls = pd.read_excel(newest,sheet_name=0,usecols='A:L',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+            fund_xls = pd.read_excel(newest,sheet_name=0,usecols='A:K',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
             'Inst Type':str, 
             'Inst Name':str,
             'ISIN':str,

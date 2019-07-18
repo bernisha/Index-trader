@@ -246,7 +246,7 @@ def pre_flow_calcFx(response,automatic=True,orders=True,testing=False):
         #str(dirtoimport_file+newest)
         #newest
         
-        fund_xls = pd.read_excel(newest,sheet_name='Orders',converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
+        fund_xls = pd.read_excel(newest,sheet_name='Orders',   usecols='A:K', converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
         'Inst Type':str, 
         'Inst Name':str,
         'ISIN':str,
