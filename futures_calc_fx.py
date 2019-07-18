@@ -227,7 +227,7 @@ def fut_calc_func(response,orders=True):
         fund_xls = pd.read_excel(newest,sheet_name='Orders',
                            #      names = ['Portfolio','Price Date','Inst Type','Inst Name','ISIN','Instrument',
                            #               'Quote Close','Qty','Market Val','Delta','Origin','ValueVal'], 
-                                 usecols='A:L',
+                                 usecols='A:K',
                                  converters={'Portfolio':str, 'Price Date': pd.to_datetime, 
                                                 'Inst Type':str, 
                                                 'Inst Name':str,
